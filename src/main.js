@@ -5,22 +5,34 @@ import { loadText } from './loaders/FileLoader.js';
 import { Shader } from './core/Shader.js';
 import { Camera } from './core/Camera.js';
 import { LightingSystem } from './scene/LightingSystem.js';
+import { PostProcessor } from './core/PostProcessor.js';
 
 async function main() {
     const canvas = document.getElementById('game');
-    canvas.width = 800;
-    canvas.height = 800;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
     const gl = canvas.getContext('webgl2');
     if (!gl) {
         alert('WebGL2 not supported');
         return;
     }
+    const ext = gl.getExtension("EXT_sRGB");
+    if (ext) {
+        gl.enable(ext.FRAMEBUFFER_SRGB);
+    }
 
     const vertexSrc = await loadText('./shaders/vertex.glsl');
     const fragmentSrc = await loadText('./shaders/fragment.glsl');
-    const shader = new Shader(gl, vertexSrc, fragmentSrc);
-    shader.use();
+    const mainShader = new Shader(gl, vertexSrc, fragmentSrc);
+    
+    const postVertexSrc = await loadText('./shaders/post.vert.glsl');
+    
+    const postFragmentSrc = await loadText('./shaders/post.frag.glsl');
+    
+    const postShader = new Shader(gl, postVertexSrc, postFragmentSrc);
+    
+    const postProcessor = new PostProcessor(gl);
 
     const camera = new Camera();
     camera.updateViewMatrix();
@@ -33,10 +45,11 @@ async function main() {
         1000
     );
 
-    gl.uniformMatrix4fv(shader.getUniform('mProj'), false, projection);
-    gl.uniformMatrix4fv(shader.getUniform('mView'), false, camera.viewMatrix);
+    mainShader.use();
+    gl.uniformMatrix4fv(mainShader.getUniform('mProj'), false, projection);
+    gl.uniformMatrix4fv(mainShader.getUniform('mView'), false, camera.viewMatrix);
 
-    const scene = new Scene(gl, shader);
+    const scene = new Scene(gl, mainShader);
 
     const sceneLights = {
         dirLights: [],
@@ -47,14 +60,14 @@ async function main() {
     const sun = addDirectionalLight(
         sceneLights,
         [3, -1, -2],
-        [0.9, 0.9, 0.9]
+        [1.3, 1.3, 1.3]
     );
 
-    const roomLight = addPointLight(
-        sceneLights,
-        [0, -5, 0],
-        [0.5, 1.0, 0.5]
-    );
+    // const roomLight = addPointLight(
+    //     sceneLights,
+    //     [0, -5, 0],
+    //     [0.5, 1.0, 0.5]
+    // );
 
     const spotLight = addSpotLight(
         sceneLights,
@@ -63,10 +76,10 @@ async function main() {
         [1.0, 1.0, 1.0]
     );
 
-    const lighting = new LightingSystem(gl, shader, camera, sceneLights);
+    const lighting = new LightingSystem(gl, mainShader, camera, sceneLights);
 
     // const hang = await ModelInstance.addModel(
-    //     gl, shader,
+    //     gl, mainShader,
     //     './models/hang.glb',
     //     {
     //         position: [0, 0, 0],
@@ -76,27 +89,16 @@ async function main() {
     // );
     // scene.addModel(hang);
 
-    const jes = await ModelInstance.addModel(
-        gl, shader,
-        './models/jes.glb',
+    const gun = await ModelInstance.addModel(
+        gl, mainShader,
+        './models/gun.glb',
         {
             position: [0, 0, 0],
             rotation: [1.5 * Math.PI, 0, 0],
-            scale: [3, 3, 3]
+            scale: [1, 1, 1]
         },
     );
-    scene.addModel(jes);
-
-    const rat = await ModelInstance.addModel(
-        gl, shader,
-        './models/rat.glb',
-        {
-            position: [3, 0, 0],
-            rotation: [1.5 * Math.PI, 0, 0],
-            scale: [3, 3, 3]
-        },
-    );
-    scene.addModel(rat);
+    scene.addModel(gun);
 
     const keys = {};
     window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
@@ -114,9 +116,11 @@ async function main() {
         camera.processMouse(e.movementX, e.movementY);
     });
 
-    let rotationY = 0;
+    let gunRotate = 0;
 
     function loop() {
+        postProcessor.begin();
+        
         camera.move({
             forward: keys['w'],
             backward: keys['s'],
@@ -127,10 +131,10 @@ async function main() {
         });
         camera.updateViewMatrix();
 
-        shader.use();
+        mainShader.use();
         lighting.upload();
 
-        gl.uniformMatrix4fv(shader.getUniform('mView'), false, camera.viewMatrix);
+        gl.uniformMatrix4fv(mainShader.getUniform('mView'), false, camera.viewMatrix);
 
         gl.viewport(0, 0, canvas.width, canvas.height);
         gl.clearColor(0.75, 0.85, 0.8, 1.0);
@@ -141,20 +145,15 @@ async function main() {
         gl.cullFace(gl.BACK);
         gl.frontFace(gl.CCW);
 
-        scene.models.forEach(model => {
-            gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, model.texture);
-            gl.uniform1i(shader.getUniform('sampler'), 0);
-        });
-
-        rotationY += 0.1;
-        rat.setRotation(0, rotationY, 0);
+        gunRotate+=0.01;
+        gun.rotation = [1.5 * Math.PI, 0, gunRotate],
 
         scene.draw();
 
+        postProcessor.end(postShader);
+
         requestAnimationFrame(loop);
     }
-
 
     loop();
 }
