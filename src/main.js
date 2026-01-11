@@ -65,16 +65,38 @@ async function main() {
 
     const lighting = new LightingSystem(gl, shader, camera, sceneLights);
 
-    const hang = await ModelInstance.addModel(
+    // const hang = await ModelInstance.addModel(
+    //     gl, shader,
+    //     './models/hang.glb',
+    //     {
+    //         position: [0, 0, 0],
+    //         rotation: [1.5 * Math.PI, 0, 0],
+    //         scale: [0.02, 0.02, 0.02]
+    //     },
+    // );
+    // scene.addModel(hang);
+
+    const jes = await ModelInstance.addModel(
         gl, shader,
-        './models/hang.glb',
+        './models/jes.glb',
         {
             position: [0, 0, 0],
             rotation: [1.5 * Math.PI, 0, 0],
-            scale: [0.02, 0.02, 0.02]
+            scale: [3, 3, 3]
         },
     );
-    scene.addModel(hang);
+    scene.addModel(jes);
+
+    const rat = await ModelInstance.addModel(
+        gl, shader,
+        './models/rat.glb',
+        {
+            position: [3, 0, 0],
+            rotation: [1.5 * Math.PI, 0, 0],
+            scale: [3, 3, 3]
+        },
+    );
+    scene.addModel(rat);
 
     const keys = {};
     window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
@@ -92,7 +114,7 @@ async function main() {
         camera.processMouse(e.movementX, e.movementY);
     });
 
-    let gunRotationY = 0;
+    let rotationY = 0;
 
     function loop() {
         camera.move({
@@ -125,8 +147,8 @@ async function main() {
             gl.uniform1i(shader.getUniform('sampler'), 0);
         });
 
-        gunRotationY += 0.01;
-        //gun.setRotation(0, gunRotationY, 0);
+        rotationY += 0.1;
+        rat.setRotation(0, rotationY, 0);
 
         scene.draw();
 

@@ -9,18 +9,45 @@ export class Model {
 
         meshes.forEach(mesh => {
             mesh.primitives.forEach(prim => {
-                const { positions, normals, uvs, indices } = this.expandPrimitive(prim);
-
                 const vao = gl.createVertexArray();
                 gl.bindVertexArray(vao);
 
-                if (positions.length) this.createVBO(gl, positions, 3, shader.getAttrib("vertPosition"));
-                if (normals.length) this.createVBO(gl, normals, 3, shader.getAttrib("vertNormal"));
-                if (uvs.length) this.createVBO(gl, uvs, 2, shader.getAttrib("vertTexCoord"));
+                if (prim.attributes.POSITION) {
+                    const buffer = gl.createBuffer();
+                    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(prim.attributes.POSITION), gl.STATIC_DRAW);
+                    const loc = shader.getAttrib("vertPosition");
+                    if (loc >= 0) {
+                        gl.vertexAttribPointer(loc, 3, gl.FLOAT, false, 0, 0);
+                        gl.enableVertexAttribArray(loc);
+                    }
+                }
+
+                if (prim.attributes.NORMAL) {
+                    const buffer = gl.createBuffer();
+                    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(prim.attributes.NORMAL), gl.STATIC_DRAW);
+                    const loc = shader.getAttrib("vertNormal");
+                    if (loc >= 0) {
+                        gl.vertexAttribPointer(loc, 3, gl.FLOAT, false, 0, 0);
+                        gl.enableVertexAttribArray(loc);
+                    }
+                }
+
+                if (prim.attributes.TEXCOORD_0) {
+                    const buffer = gl.createBuffer();
+                    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(prim.attributes.TEXCOORD_0), gl.STATIC_DRAW);
+                    const loc = shader.getAttrib("vertTexCoord");
+                    if (loc >= 0) {
+                        gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+                        gl.enableVertexAttribArray(loc);
+                    }
+                }
 
                 const ibo = gl.createBuffer();
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-                gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+                gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(prim.indices), gl.STATIC_DRAW);
 
                 let webGLTexture = null;
                 if (prim.material && prim.material.pbrMetallicRoughness) {
@@ -33,57 +60,13 @@ export class Model {
 
                 this.meshes.push({
                     vao,
-                    indexCount: indices.length,
+                    indexCount: prim.indices.length,
                     texture: webGLTexture
                 });
 
                 gl.bindVertexArray(null);
             });
         });
-    }
-
-    expandPrimitive(prim) {
-        const pos = prim.attributes.POSITION || [];
-        const norm = prim.attributes.NORMAL || [];
-        const uv = prim.attributes.TEXCOORD_0 || [];
-        const indices = prim.indices || [];
-
-        const outPositions = [];
-        const outNormals = [];
-        const outUVs = [];
-        const outIndices = [];
-
-        for (let i = 0; i < indices.length; i++) {
-            const idx = indices[i];
-
-            outPositions.push(pos[idx * 3 + 0] || 0);
-            outPositions.push(pos[idx * 3 + 1] || 0);
-            outPositions.push(pos[idx * 3 + 2] || 0);
-
-            if (norm.length) {
-                outNormals.push(norm[idx * 3 + 0] || 0);
-                outNormals.push(norm[idx * 3 + 1] || 0);
-                outNormals.push(norm[idx * 3 + 2] || 0);
-            }
-
-            if (uv.length) {
-                outUVs.push(uv[idx * 2 + 0] || 0);
-                outUVs.push(uv[idx * 2 + 1] || 0);
-            }
-
-            outIndices.push(i);
-        }
-
-        return { positions: outPositions, normals: outNormals, uvs: outUVs, indices: outIndices };
-    }
-
-    createVBO(gl, data, size, location) {
-        if (location < 0 || !data || !data.length) return;
-        const buffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
-        gl.vertexAttribPointer(location, size, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(location);
     }
 
     draw(gl, shader) {
