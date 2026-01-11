@@ -43,7 +43,7 @@ async function main() {
 
     const lighting = new LightingSystem(gl, shader, camera, sceneLights);
 
-    async function addModel(gl, shader, modelUrl, textureUrl, options = {}) {
+    async function addModel(modelUrl, textureUrl, options = {}) {
         const modelData = await loadJSON(modelUrl);
         const texture = await loadTexture(gl, textureUrl);
         const instance = new ModelInstance(gl, modelData, shader, texture);
