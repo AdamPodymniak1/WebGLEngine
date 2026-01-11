@@ -13,8 +13,9 @@ uniform mat4 mView;
 uniform mat4 mProj;
 
 void main() {
-    fragPosition = (mWorld * vec4(vertPosition, 1.0)).xyz;
-    fragNormal = mat3(transpose(inverse(mWorld))) * vertNormal;
+    vec4 worldPos = mWorld * vec4(vertPosition, 1.0);
+    fragPosition = worldPos.xyz;
+    fragNormal = normalize(mat3(transpose(inverse(mWorld))) * vertNormal);
     fragTexCoord = vertTexCoord;
-    gl_Position = mProj * mView * mWorld * vec4(vertPosition, 1.0);
+    gl_Position = mProj * mView * worldPos;
 }
