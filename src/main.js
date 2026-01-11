@@ -1,7 +1,7 @@
 import { Scene } from './scene/Scene.js';
 import { ModelInstance } from './scene/ModelInstance.js';
 import { addDirectionalLight, addPointLight, addSpotLight } from './core/Lighting.js';
-import { loadJSON, loadText, loadTexture } from './loaders/FileLoader.js';
+import { loadText } from './loaders/FileLoader.js';
 import { Shader } from './core/Shader.js';
 import { Camera } from './core/Camera.js';
 import { LightingSystem } from './scene/LightingSystem.js';
@@ -65,20 +65,8 @@ async function main() {
 
     const lighting = new LightingSystem(gl, shader, camera, sceneLights);
 
-    async function addModel(modelUrl, textureUrl, options = {}) {
-        const modelData = await loadJSON(modelUrl);
-        const texture = await loadTexture(gl, textureUrl);
-        const instance = new ModelInstance(gl, modelData, shader, texture);
-
-        if (options.position) instance.setPosition(...options.position);
-        if (options.rotation) instance.setRotation(...options.rotation);
-        if (options.scale) instance.setScale(...options.scale);
-
-        scene.addModel(instance);
-        return instance;
-    }
-
-    const penguin = await addModel(
+    const penguin = await ModelInstance.addModel(
+        gl, shader,
         './models/penguin.json',
         './textures/Penguin.png',
         {
@@ -87,8 +75,10 @@ async function main() {
             scale: [2, 2, 2]
         }
     );
+    scene.addModel(penguin);
 
-    const gun = await addModel(
+    const gun = await ModelInstance.addModel(
+        gl, shader,
         './models/gun.json',
         './textures/gun.jpg',
         {
@@ -96,8 +86,10 @@ async function main() {
             scale: [3, 3, 3]
         }
     );
+    scene.addModel(gun);
 
-    const jes = await addModel(
+    const jes = await ModelInstance.addModel(
+        gl, shader,
         './models/jes.json',
         './textures/jes.png',
         {
@@ -106,6 +98,7 @@ async function main() {
             scale: [3, 3, 3]
         }
     );
+    scene.addModel(jes);
 
     const keys = {};
     window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);

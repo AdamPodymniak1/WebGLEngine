@@ -1,5 +1,6 @@
 import { Model } from '../loaders/ModelLoader.js';
 import { Entity } from "../scene/Entity.js";
+import { loadJSON, loadTexture } from '../loaders/FileLoader.js';
 
 export class ModelInstance extends Entity {
     constructor(gl, modelData, shader, texture) {
@@ -33,5 +34,17 @@ export class ModelInstance extends Entity {
         this.gl.uniform1i(uSampler, 0);
 
         this.model.draw();
+    }
+
+    static async addModel(gl, shader, modelUrl, textureUrl, options = {}) {
+        const modelData = await loadJSON(modelUrl);
+        const texture = await loadTexture(gl, textureUrl);
+        const instance = new ModelInstance(gl, modelData, shader, texture);
+
+        if (options.position) instance.setPosition(...options.position);
+        if (options.rotation) instance.setRotation(...options.rotation);
+        if (options.scale) instance.setScale(...options.scale);
+
+        return instance;
     }
 }
