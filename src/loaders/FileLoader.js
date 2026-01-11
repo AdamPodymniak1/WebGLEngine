@@ -1,16 +1,12 @@
 export async function loadJSON(url) {
     const response = await fetch(url);
-    if (!response.ok) {
-        throw new Error(`Failed to load ${url}`);
-    }
+    if (!response.ok) throw new Error(`Failed to load ${url}`);
     return response.json();
 }
 
 export async function loadText(url) {
     const response = await fetch(url);
-    if (!response.ok) {
-        throw new Error(`Failed to load ${url}`);
-    }
+    if (!response.ok) throw new Error(`Failed to load ${url}`);
     return response.text();
 }
 
@@ -18,7 +14,6 @@ export async function loadTexture(gl, url) {
     return new Promise((resolve, reject) => {
         const texture = gl.createTexture();
         const image = new Image();
-
         image.onload = () => {
             gl.bindTexture(gl.TEXTURE_2D, texture);
             gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
@@ -30,9 +25,14 @@ export async function loadTexture(gl, url) {
             gl.bindTexture(gl.TEXTURE_2D, null);
             resolve(texture);
         };
-
         image.onerror = () => reject(new Error(`Failed to load texture: ${url}`));
-
         image.src = url;
     });
+}
+
+export async function loadGLB(url) {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to load GLB: ${url}`);
+    const arrayBuffer = await response.arrayBuffer();
+    return arrayBuffer;
 }

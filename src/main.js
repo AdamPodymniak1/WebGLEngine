@@ -65,40 +65,16 @@ async function main() {
 
     const lighting = new LightingSystem(gl, shader, camera, sceneLights);
 
-    const penguin = await ModelInstance.addModel(
+    const hang = await ModelInstance.addModel(
         gl, shader,
-        './models/penguin.json',
-        './textures/Penguin.png',
+        './models/hang.glb',
         {
-            position: [0, 0, 0], 
+            position: [0, 0, 0],
             rotation: [1.5 * Math.PI, 0, 0],
-            scale: [2, 2, 2]
-        }
+            scale: [0.02, 0.02, 0.02]
+        },
     );
-    scene.addModel(penguin);
-
-    const gun = await ModelInstance.addModel(
-        gl, shader,
-        './models/gun.json',
-        './textures/gun.jpg',
-        {
-            position: [2, -2, -1],
-            scale: [3, 3, 3]
-        }
-    );
-    scene.addModel(gun);
-
-    const jes = await ModelInstance.addModel(
-        gl, shader,
-        './models/jes.json',
-        './textures/jes.png',
-        {
-            position: [-6, -2, -1],
-            rotation: [0, 0, 0],
-            scale: [3, 3, 3]
-        }
-    );
-    scene.addModel(jes);
+    scene.addModel(hang);
 
     const keys = {};
     window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
@@ -150,7 +126,7 @@ async function main() {
         });
 
         gunRotationY += 0.01;
-        gun.setRotation(0, gunRotationY, 0);
+        //gun.setRotation(0, gunRotationY, 0);
 
         scene.draw();
 
