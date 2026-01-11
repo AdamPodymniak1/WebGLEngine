@@ -4,6 +4,7 @@ import { addDirectionalLight, addPointLight, addSpotLight } from './core/Lightin
 import { loadJSON, loadText, loadTexture } from './loaders/FileLoader.js';
 import { Shader } from './core/Shader.js';
 import { Camera } from './core/Camera.js';
+import { LightingSystem } from './scene/LightingSystem.js';
 
 async function main() {
     const canvas = document.getElementById('game');
@@ -40,41 +41,9 @@ async function main() {
     addPointLight(sceneLights, [0, -5, 0], [0.5, 1, 0.5]);
     addSpotLight(sceneLights, [2, 5, 2], [-1, -1, -1], [0.5, 0.5, 1]);
 
-    function uploadLights() {
-        gl.uniform3fv(shader.getUniform('viewPos'), new Float32Array(camera.position));
+    const lighting = new LightingSystem(gl, shader, camera, sceneLights);
 
-        gl.uniform1i(shader.getUniform('numDirLights'), sceneLights.dirLights.length);
-        gl.uniform1i(shader.getUniform('numPointLights'), sceneLights.pointLights.length);
-        gl.uniform1i(shader.getUniform('numSpotLights'), sceneLights.spotLights.length);
-
-        sceneLights.dirLights.forEach((l, i) => {
-            gl.uniform3fv(shader.getUniform(`dirLights[${i}].direction`), new Float32Array(l.direction));
-            gl.uniform3fv(shader.getUniform(`dirLights[${i}].color`), new Float32Array(l.color));
-        });
-
-        sceneLights.pointLights.forEach((l, i) => {
-            gl.uniform3fv(shader.getUniform(`pointLights[${i}].position`), new Float32Array(l.position));
-            gl.uniform3fv(shader.getUniform(`pointLights[${i}].color`), new Float32Array(l.color));
-            gl.uniform1f(shader.getUniform(`pointLights[${i}].constant`), l.constant);
-            gl.uniform1f(shader.getUniform(`pointLights[${i}].linear`), l.linear);
-            gl.uniform1f(shader.getUniform(`pointLights[${i}].quadratic`), l.quadratic);
-        });
-
-        sceneLights.spotLights.forEach((l, i) => {
-            gl.uniform3fv(shader.getUniform(`spotLights[${i}].position`), new Float32Array(l.position));
-            gl.uniform3fv(shader.getUniform(`spotLights[${i}].direction`), new Float32Array(l.direction));
-            gl.uniform3fv(shader.getUniform(`spotLights[${i}].color`), new Float32Array(l.color));
-            gl.uniform1f(shader.getUniform(`spotLights[${i}].cutOff`), l.cutOff);
-            gl.uniform1f(shader.getUniform(`spotLights[${i}].outerCutOff`), l.outerCutOff);
-            gl.uniform1f(shader.getUniform(`spotLights[${i}].constant`), l.constant);
-            gl.uniform1f(shader.getUniform(`spotLights[${i}].linear`), l.linear);
-            gl.uniform1f(shader.getUniform(`spotLights[${i}].quadratic`), l.quadratic);
-        });
-
-        gl.uniform3fv(shader.getUniform('ambientLightIntensity'), new Float32Array([0.3, 0.3, 0.3]));
-    }
-
-    async function addModel(modelUrl, textureUrl, options = {}) {
+    async function addModel(gl, shader, modelUrl, textureUrl, options = {}) {
         const modelData = await loadJSON(modelUrl);
         const texture = await loadTexture(gl, textureUrl);
         const instance = new ModelInstance(gl, modelData, shader, texture);
@@ -136,7 +105,8 @@ async function main() {
         camera.updateViewMatrix();
 
         shader.use();
-        uploadLights();
+        lighting.upload();
+
         gl.uniformMatrix4fv(shader.getUniform('mView'), false, camera.viewMatrix);
 
         gl.viewport(0, 0, canvas.width, canvas.height);
