@@ -12,7 +12,10 @@ async function main() {
     canvas.height = 800;
 
     const gl = canvas.getContext('webgl2');
-    if (!gl) { alert('WebGL2 not supported'); return; }
+    if (!gl) {
+        alert('WebGL2 not supported');
+        return;
+    }
 
     const vertexSrc = await loadText('./shaders/vertex.glsl');
     const fragmentSrc = await loadText('./shaders/fragment.glsl');
@@ -35,11 +38,30 @@ async function main() {
 
     const scene = new Scene(gl, shader);
 
-    const sceneLights = { dirLights: [], pointLights: [], spotLights: [] };
-    addDirectionalLight(sceneLights, [3, 4, 2], [0.9, 0.9, 0.9]);
-    addPointLight(sceneLights, [13, 5, 0], [1, 0.5, 0.5]);
-    addPointLight(sceneLights, [0, -5, 0], [0.5, 1, 0.5]);
-    addSpotLight(sceneLights, [2, 5, 2], [-1, -1, -1], [0.5, 0.5, 1]);
+    const sceneLights = {
+        dirLights: [],
+        pointLights: [],
+        spotLights: []
+    };
+
+    const sun = addDirectionalLight(
+        sceneLights,
+        [3, -1, -2],
+        [0.9, 0.9, 0.9]
+    );
+
+    const roomLight = addPointLight(
+        sceneLights,
+        [0, -5, 0],
+        [0.5, 1.0, 0.5]
+    );
+
+    const spotLight = addSpotLight(
+        sceneLights,
+        [0, 0, 0],
+        [0, 0, -1],
+        [1.0, 1.0, 1.0]
+    );
 
     const lighting = new LightingSystem(gl, shader, camera, sceneLights);
 
@@ -55,8 +77,8 @@ async function main() {
         scene.addModel(instance);
         return instance;
     }
-    
-    await addModel(
+
+    const penguin = await addModel(
         './models/penguin.json',
         './textures/Penguin.png',
         {
@@ -65,16 +87,17 @@ async function main() {
             scale: [2, 2, 2]
         }
     );
-    await addModel(
+
+    const gun = await addModel(
         './models/gun.json',
         './textures/gun.jpg',
         {
             position: [2, -2, -1],
-            rotation: [1.5 * Math.PI, 0, 1.5 * Math.PI],
             scale: [3, 3, 3]
         }
     );
-    await addModel(
+
+    const jes = await addModel(
         './models/jes.json',
         './textures/jes.png',
         {
@@ -90,8 +113,17 @@ async function main() {
 
     canvas.addEventListener('click', () => canvas.requestPointerLock());
     let pointerLocked = false;
-    document.addEventListener('pointerlockchange', () => { pointerLocked = document.pointerLockElement === canvas; });
-    document.addEventListener('mousemove', e => { if (!pointerLocked) return; camera.processMouse(e.movementX, e.movementY); });
+
+    document.addEventListener('pointerlockchange', () => {
+        pointerLocked = document.pointerLockElement === canvas;
+    });
+
+    document.addEventListener('mousemove', e => {
+        if (!pointerLocked) return;
+        camera.processMouse(e.movementX, e.movementY);
+    });
+
+    let gunRotationY = 0;
 
     function loop() {
         camera.move({
@@ -124,9 +156,14 @@ async function main() {
             gl.uniform1i(shader.getUniform('sampler'), 0);
         });
 
+        gunRotationY += 0.01;
+        gun.setRotation(0, gunRotationY, 0);
+
         scene.draw();
+
         requestAnimationFrame(loop);
     }
+
 
     loop();
 }

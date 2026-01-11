@@ -1,26 +1,20 @@
 export class LightingSystem {
-    constructor(gl, shader, camera, sceneLights) {
+    constructor(gl, shader, camera, lights) {
         this.gl = gl;
         this.shader = shader;
         this.camera = camera;
-        this.sceneLights = sceneLights;
+        this.lights = lights;
         this.ambient = [0.3, 0.3, 0.3];
     }
 
     upload() {
         const gl = this.gl;
         const shader = this.shader;
-        const lights = this.sceneLights;
+        const lights = this.lights;
 
-        gl.uniform3fv(
-            shader.getUniform('viewPos'),
-            new Float32Array(this.camera.position)
-        );
+        gl.uniform3fv(shader.getUniform('viewPos'), new Float32Array(this.camera.position));
 
-        gl.uniform3fv(
-            shader.getUniform('ambientLightIntensity'),
-            new Float32Array(this.ambient)
-        );
+        gl.uniform3fv(shader.getUniform('ambientLightIntensity'), new Float32Array(this.ambient));
 
         gl.uniform1i(shader.getUniform('numDirLights'), lights.dirLights.length);
         gl.uniform1i(shader.getUniform('numPointLights'), lights.pointLights.length);

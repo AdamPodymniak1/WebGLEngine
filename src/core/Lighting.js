@@ -1,12 +1,16 @@
-export class DirectionalLight {
+import { Entity } from "../scene/Entity.js";
+
+export class DirectionalLight extends Entity {
     constructor(dir, color) {
+        super();
         this.direction = dir;
         this.color = color;
     }
 }
 
-export class PointLight {
+export class PointLight extends Entity {
     constructor(pos, color, constant = 1, linear = 0.09, quadratic = 0.032) {
+        super();
         this.position = pos;
         this.color = color;
         this.constant = constant;
@@ -15,8 +19,9 @@ export class PointLight {
     }
 }
 
-export class SpotLight {
+export class SpotLight extends Entity {
     constructor(pos, dir, color, cutOff = 0.91, outerCutOff = 0.82, constant = 1, linear = 0.09, quadratic = 0.032) {
+        super();
         this.position = pos;
         this.direction = dir;
         this.color = color;

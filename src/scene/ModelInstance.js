@@ -1,7 +1,9 @@
 import { Model } from '../loaders/ModelLoader.js';
+import { Entity } from "../scene/Entity.js";
 
-export class ModelInstance {
+export class ModelInstance extends Entity {
     constructor(gl, modelData, shader, texture) {
+        super();
         this.gl = gl;
         this.model = new Model(gl, modelData, shader);
         this.texture = texture;
@@ -9,18 +11,6 @@ export class ModelInstance {
         this.position = [0, 0, 0];
         this.rotation = [0, 0, 0];
         this.scale = [1, 1, 1];
-    }
-
-    setPosition(x, y, z) {
-        this.position = [x, y, z];
-    }
-
-    setRotation(x, y, z) {
-        this.rotation = [x, y, z];
-    }
-
-    setScale(x, y, z) {
-        this.scale = [x, y, z];
     }
 
     getWorldMatrix() {
