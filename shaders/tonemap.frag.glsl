@@ -28,6 +28,13 @@ vec3 tonemapReinhard(vec3 color) {
     return color / (1.0 + color);
 }
 
+vec3 tonemapRomBinDaHouse(vec3 color)
+{
+    color = exp( -1.0 / ( 2.72*color + 0.15 ) );
+	color = pow(color, vec3(1.0));
+	return color;
+}
+
 vec3 tonemapLottes(vec3 color) {
     const vec3 a = vec3(1.6);
     const vec3 d = vec3(0.977);
@@ -53,7 +60,7 @@ vec3 applyGamma(vec3 color, float gamma) {
 void main() {
     vec3 color = texture(uScene, vUV).rgb;
 
-    color = tonemapLottes(color * 1.2);
+    color = tonemapRomBinDaHouse(color * 1.2);
     color = applyGamma(color, 0.6);
 
     fragColor = vec4(color, 1.0);
