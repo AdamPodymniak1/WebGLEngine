@@ -1,10 +1,10 @@
 #version 300 es
-precision mediump float;
+precision highp float;
 
-uniform sampler2D uTexture;
-
-in vec2 vTexCoord;
+in vec2 vUV;
 out vec4 fragColor;
+
+uniform sampler2D uScene;
 
 vec3 tonemapACES(vec3 color) {
     const float A = 2.51;
@@ -34,12 +34,13 @@ vec3 tonemapLottes(vec3 color) {
     const vec3 hdrMax = vec3(8.0);
     const vec3 midIn = vec3(0.18);
     const vec3 midOut = vec3(0.267);
-    
-    const vec3 b = (-pow(midIn, a) + pow(hdrMax, a) * midOut) / 
+
+    const vec3 b = (-pow(midIn, a) + pow(hdrMax, a) * midOut) /
                    ((pow(hdrMax, a * d) - pow(midIn, a * d)) * midOut);
-    const vec3 c = (pow(hdrMax, a * d) * pow(midIn, a) - pow(hdrMax, a) * pow(midIn, a * d) * midOut) / 
+    const vec3 c = (pow(hdrMax, a * d) * pow(midIn, a) -
+                   pow(hdrMax, a) * pow(midIn, a * d) * midOut) /
                    ((pow(hdrMax, a * d) - pow(midIn, a * d)) * midOut);
-    
+
     color = pow(color, a);
     color = color / (pow(color, d) * b + c);
     return color;
@@ -50,11 +51,10 @@ vec3 applyGamma(vec3 color, float gamma) {
 }
 
 void main() {
-    vec3 color = texture(uTexture, vTexCoord).rgb;
-    
+    vec3 color = texture(uScene, vUV).rgb;
+
     color = tonemapLottes(color * 1.2);
-    
-    color = applyGamma(color, 0.4);
-    
+    color = applyGamma(color, 0.6);
+
     fragColor = vec4(color, 1.0);
 }

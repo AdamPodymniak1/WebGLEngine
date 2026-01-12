@@ -27,10 +27,10 @@ async function main() {
     const mainShader = new Shader(gl, vertexSrc, fragmentSrc);
     
     const postVertexSrc = await loadText('./shaders/post.vert.glsl');
-    
-    const postFragmentSrc = await loadText('./shaders/post.frag.glsl');
-    
-    const postShader = new Shader(gl, postVertexSrc, postFragmentSrc);
+    const tonemapFragmentSrc = await loadText('./shaders/tonemap.frag.glsl');
+    const fxaaFragmentSrc = await loadText('./shaders/fxaa.frag.glsl');
+    const tonemapShader = new Shader(gl, postVertexSrc, tonemapFragmentSrc);
+    const fxaaShader = new Shader(gl, postVertexSrc, fxaaFragmentSrc);
     
     const postProcessor = new PostProcessor(gl);
 
@@ -63,11 +63,11 @@ async function main() {
         [1.3, 1.3, 1.3]
     );
 
-    // const roomLight = addPointLight(
-    //     sceneLights,
-    //     [0, -5, 0],
-    //     [0.5, 1.0, 0.5]
-    // );
+    const roomLight = addPointLight(
+        sceneLights,
+        [3, 1, -2],
+        [0.5, 1.0, 0.5]
+    );
 
     const spotLight = addSpotLight(
         sceneLights,
@@ -150,7 +150,8 @@ async function main() {
 
         scene.draw();
 
-        postProcessor.end(postShader);
+        postProcessor.pass(tonemapShader);
+        postProcessor.end(fxaaShader);
 
         requestAnimationFrame(loop);
     }
