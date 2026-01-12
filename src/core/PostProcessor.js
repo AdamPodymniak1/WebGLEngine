@@ -7,6 +7,7 @@ export class PostProcessor {
 
         this.framebuffers = [];
         this.textures = [];
+        this.depthBuffer = null;
 
         this.read = 0;
         this.write = 1;
@@ -21,7 +22,17 @@ export class PostProcessor {
     initBuffers() {
         const gl = this.gl;
 
+        this.framebuffers.length = 0;
+        this.textures.length = 0;
+
         this.depthBuffer = gl.createRenderbuffer();
+        gl.bindRenderbuffer(gl.RENDERBUFFER, this.depthBuffer);
+        gl.renderbufferStorage(
+            gl.RENDERBUFFER,
+            gl.DEPTH_COMPONENT16,
+            this.width,
+            this.height
+        );
 
         for (let i = 0; i < 2; i++) {
             const fbo = gl.createFramebuffer();
@@ -31,12 +42,12 @@ export class PostProcessor {
             gl.texImage2D(
                 gl.TEXTURE_2D,
                 0,
-                gl.RGBA,
+                gl.RGBA16F,
                 this.width,
                 this.height,
                 0,
                 gl.RGBA,
-                gl.UNSIGNED_BYTE,
+                gl.FLOAT,
                 null
             );
 
@@ -55,13 +66,6 @@ export class PostProcessor {
             );
 
             if (i === 0) {
-                gl.bindRenderbuffer(gl.RENDERBUFFER, this.depthBuffer);
-                gl.renderbufferStorage(
-                    gl.RENDERBUFFER,
-                    gl.DEPTH_COMPONENT16,
-                    this.width,
-                    this.height
-                );
                 gl.framebufferRenderbuffer(
                     gl.FRAMEBUFFER,
                     gl.DEPTH_ATTACHMENT,
@@ -145,7 +149,7 @@ export class PostProcessor {
         [this.read, this.write] = [this.write, this.read];
     }
 
-    end(finalShader) {
+    end(shader) {
         const gl = this.gl;
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -155,13 +159,13 @@ export class PostProcessor {
         gl.disable(gl.DEPTH_TEST);
         gl.disable(gl.CULL_FACE);
 
-        finalShader.use();
+        shader.use();
 
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, this.textures[this.read]);
-        gl.uniform1i(finalShader.getUniform("uScene"), 0);
+        gl.uniform1i(shader.getUniform("uScene"), 0);
 
-        const resLoc = finalShader.getUniform("uResolution");
+        const resLoc = shader.getUniform("uResolution");
         if (resLoc !== null) {
             gl.uniform2f(resLoc, this.width, this.height);
         }
@@ -174,8 +178,6 @@ export class PostProcessor {
     resize() {
         this.width = this.gl.canvas.width;
         this.height = this.gl.canvas.height;
-        this.framebuffers = [];
-        this.textures = [];
         this.initBuffers();
     }
 }

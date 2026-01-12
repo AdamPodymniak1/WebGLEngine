@@ -17,10 +17,26 @@ async function main() {
         alert('WebGL2 not supported');
         return;
     }
-    const ext = gl.getExtension("EXT_sRGB");
-    if (ext) {
-        gl.enable(ext.FRAMEBUFFER_SRGB);
+    const ext_sRGB = gl.getExtension("EXT_sRGB");
+    if (ext_sRGB) {
+        gl.enable(ext_sRGB.FRAMEBUFFER_SRGB);
     }
+    const ext_CBF = gl.getExtension('EXT_color_buffer_float');
+    if (!ext_CBF) {
+        alert('HDR not supported on this device');
+    }
+
+    const TONEMAP = {
+        ACES: 0,
+        FILMIC: 1,
+        REINHARD: 2,
+        ROM_BIN_DA_HOUSE: 3,
+        LOTTES: 4
+    };
+
+    let tonemapMode = TONEMAP.ACES;
+    let exposure = 0.9;
+    let gamma = 0.6;
 
     const vertexSrc = await loadText('./shaders/vertex.glsl');
     const fragmentSrc = await loadText('./shaders/fragment.glsl');
@@ -149,6 +165,11 @@ async function main() {
         gun.rotation = [1.5 * Math.PI, 0, gunRotate],
 
         scene.draw();
+
+        tonemapShader.use();
+        gl.uniform1i(tonemapShader.getUniform("uTonemap"), tonemapMode);
+        gl.uniform1f(tonemapShader.getUniform("uExposure"), exposure);
+        gl.uniform1f(tonemapShader.getUniform("uGamma"), gamma);
 
         postProcessor.pass(tonemapShader);
         postProcessor.end(fxaaShader);
