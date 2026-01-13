@@ -44,4 +44,30 @@ export class LightingSystem {
             gl.uniform1f(shader.getUniform(`spotLights[${i}].quadratic`), l.quadratic);
         });
     }
+    
+    uploadShadows(shadowRenderer) {
+        const gl = this.gl;
+        const shader = this.shader;
+        
+        if (shadowRenderer) {
+            const shadowMapTex = shadowRenderer.getShadowMap().getTexture();
+            gl.activeTexture(gl.TEXTURE5);
+            gl.bindTexture(gl.TEXTURE_2D, shadowMapTex);
+            gl.uniform1i(shader.getUniform("uShadowMap"), 5);
+            
+            gl.uniformMatrix4fv(
+                shader.getUniform("mLightSpace"),
+                false,
+                shadowRenderer.getLightSpaceMatrix()
+            );
+            
+            const settings = shadowRenderer.getSettings();
+            gl.uniform1f(shader.getUniform("uShadowBias"), settings.bias);
+            gl.uniform1i(shader.getUniform("uShadowSamples"), settings.samples);
+            gl.uniform1f(shader.getUniform("uShadowSampleRadius"), settings.radius);
+            gl.uniform1i(shader.getUniform("uShadowsEnabled"), 1);
+        } else {
+            gl.uniform1i(shader.getUniform("uShadowsEnabled"), 0);
+        }
+    }
 }

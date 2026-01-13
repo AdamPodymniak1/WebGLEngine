@@ -6,6 +6,7 @@ import { Shader } from './core/Shader.js';
 import { Camera } from './core/Camera.js';
 import { LightingSystem } from './scene/LightingSystem.js';
 import { PostProcessor } from './core/PostProcessor.js';
+import { ShadowRenderer } from './loaders/ShadowRenderer.js';
 
 async function main() {
     const canvas = document.getElementById('game');
@@ -35,7 +36,7 @@ async function main() {
     };
 
     let tonemapMode = TONEMAP.ACES;
-    let exposure = 0.9;
+    let exposure = 0.75;
     let gamma = 0.6;
 
     const vertexSrc = await loadText('./shaders/vertex.glsl');
@@ -75,7 +76,7 @@ async function main() {
 
     const sun = addDirectionalLight(
         sceneLights,
-        [3, -1, -2],
+        [3, -2, -3],
         [1.3, 1.3, 1.3]
     );
 
@@ -93,28 +94,31 @@ async function main() {
     );
 
     const lighting = new LightingSystem(gl, mainShader, camera, sceneLights);
+    
+    const shadowRenderer = new ShadowRenderer(gl, scene, camera);
+    await shadowRenderer.init();
 
-    // const hang = await ModelInstance.addModel(
+    // const gun = await ModelInstance.addModel(
     //     gl, mainShader,
-    //     './models/hang.glb',
+    //     './models/gun.glb',
     //     {
     //         position: [0, 0, 0],
     //         rotation: [1.5 * Math.PI, 0, 0],
-    //         scale: [0.02, 0.02, 0.02]
+    //         scale: [1, 1, 1]
     //     },
     // );
-    // scene.addModel(hang);
+    // scene.addModel(gun);
 
-    const gun = await ModelInstance.addModel(
+    const hang = await ModelInstance.addModel(
         gl, mainShader,
-        './models/gun.glb',
+        './models/hang.glb',
         {
             position: [0, 0, 0],
             rotation: [1.5 * Math.PI, 0, 0],
-            scale: [1, 1, 1]
+            scale: [0.02, 0.02, 0.02]
         },
     );
-    scene.addModel(gun);
+    scene.addModel(hang);
 
     const keys = {};
     window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
@@ -135,6 +139,8 @@ async function main() {
     let gunRotate = 0;
 
     function loop() {
+        shadowRenderer.render(sun.direction);
+        
         postProcessor.begin();
         
         camera.move({
@@ -149,6 +155,7 @@ async function main() {
 
         mainShader.use();
         lighting.upload();
+        lighting.uploadShadows(shadowRenderer);
 
         gl.uniformMatrix4fv(mainShader.getUniform('mView'), false, camera.viewMatrix);
 
@@ -162,7 +169,7 @@ async function main() {
         gl.frontFace(gl.CCW);
 
         gunRotate+=0.01;
-        gun.rotation = [1.5 * Math.PI, 0, gunRotate],
+        //gun.rotation = [1.5 * Math.PI, 0, gunRotate],
 
         scene.draw();
 

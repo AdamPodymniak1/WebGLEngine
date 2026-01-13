@@ -4,6 +4,7 @@ export class Model {
         this.gltf = gltf;
         this.textures = textures;
         this.meshes = [];
+        this.shadowMeshes = [];
 
         gltf.meshes.forEach(mesh => {
             mesh.primitives.forEach(prim => {
@@ -46,6 +47,20 @@ export class Model {
                 });
 
                 gl.bindVertexArray(null);
+                
+                const shadowVAO = gl.createVertexArray();
+                gl.bindVertexArray(shadowVAO);
+                const shadowPosLoc = 0;
+                this._createVBO(gl, prim.attributes.POSITION, 3, shadowPosLoc);
+                const shadowIBO = gl.createBuffer();
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, shadowIBO);
+                gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(prim.indices), gl.STATIC_DRAW);
+                gl.bindVertexArray(null);
+                
+                this.shadowMeshes.push({
+                    vao: shadowVAO,
+                    indexCount: prim.indices.length
+                });
             });
         });
     }
@@ -111,6 +126,14 @@ export class Model {
                 gl.uniform1i(uUseAO, 0);
             }
 
+            gl.bindVertexArray(mesh.vao);
+            gl.drawElements(gl.TRIANGLES, mesh.indexCount, gl.UNSIGNED_SHORT, 0);
+            gl.bindVertexArray(null);
+        });
+    }
+    
+    drawShadow(gl, shader) {
+        this.shadowMeshes.forEach(mesh => {
             gl.bindVertexArray(mesh.vao);
             gl.drawElements(gl.TRIANGLES, mesh.indexCount, gl.UNSIGNED_SHORT, 0);
             gl.bindVertexArray(null);
