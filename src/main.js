@@ -7,6 +7,7 @@ import { Camera } from './core/Camera.js';
 import { LightingSystem } from './scene/LightingSystem.js';
 import { PostProcessor } from './core/PostProcessor.js';
 import { ShadowRenderer } from './loaders/ShadowRenderer.js';
+import { startFPSCounter } from './core/FPS.js';
 
 async function main() {
     const canvas = document.getElementById('game');
@@ -98,27 +99,27 @@ async function main() {
     const shadowRenderer = new ShadowRenderer(gl, scene, camera);
     await shadowRenderer.init();
 
-    // const gun = await ModelInstance.addModel(
-    //     gl, mainShader,
-    //     './models/gun.glb',
-    //     {
-    //         position: [0, 0, 0],
-    //         rotation: [1.5 * Math.PI, 0, 0],
-    //         scale: [1, 1, 1]
-    //     },
-    // );
-    // scene.addModel(gun);
-
-    const hang = await ModelInstance.addModel(
+    const gun = await ModelInstance.addModel(
         gl, mainShader,
-        './models/hang.glb',
+        './models/gun.glb',
         {
             position: [0, 0, 0],
             rotation: [1.5 * Math.PI, 0, 0],
-            scale: [0.02, 0.02, 0.02]
+            scale: [1, 1, 1]
         },
     );
-    scene.addModel(hang);
+    scene.addModel(gun);
+
+    // const hang = await ModelInstance.addModel(
+    //     gl, mainShader,
+    //     './models/hang.glb',
+    //     {
+    //         position: [0, 0, 0],
+    //         rotation: [1.5 * Math.PI, 0, 0],
+    //         scale: [0.02, 0.02, 0.02]
+    //     },
+    // );
+    // scene.addModel(hang);
 
     const keys = {};
     window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
@@ -169,7 +170,7 @@ async function main() {
         gl.frontFace(gl.CCW);
 
         gunRotate+=0.01;
-        //gun.rotation = [1.5 * Math.PI, 0, gunRotate],
+        gun.rotation = [1.5 * Math.PI, 0, gunRotate],
 
         scene.draw();
 
@@ -188,3 +189,5 @@ async function main() {
 }
 
 main();
+
+startFPSCounter(fps => console.log(`FPS: ${fps.toFixed(1)}`));
