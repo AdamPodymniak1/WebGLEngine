@@ -36,7 +36,7 @@ async function main() {
     };
 
     let tonemapMode = TONEMAP.ACES;
-    let exposure = 0.75;
+    let exposure = 0.6;
     let gamma = 0.6;
 
     const vertexSrc = await loadText('./shaders/vertex.glsl');

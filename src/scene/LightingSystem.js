@@ -4,7 +4,7 @@ export class LightingSystem {
         this.shader = shader;
         this.camera = camera;
         this.lights = lights;
-        this.ambient = [0.3, 0.3, 0.3];
+        this.ambient = [0.4, 0.4, 0.4];
     }
 
     upload() {
@@ -65,6 +65,7 @@ export class LightingSystem {
             gl.uniform1f(shader.getUniform("uShadowBias"), settings.bias);
             gl.uniform1i(shader.getUniform("uShadowSamples"), settings.samples);
             gl.uniform1f(shader.getUniform("uShadowSampleRadius"), settings.radius);
+            gl.uniform1f(shader.getUniform("uShadowStrength"), settings.strength);
             gl.uniform1i(shader.getUniform("uShadowsEnabled"), 1);
         } else {
             gl.uniform1i(shader.getUniform("uShadowsEnabled"), 0);

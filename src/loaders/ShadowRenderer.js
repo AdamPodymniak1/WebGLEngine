@@ -15,8 +15,9 @@ export class ShadowRenderer {
         this.lightSpaceMatrix = glMatrix.mat4.create();
         
         this.shadowBias = 0.0005;
-        this.shadowSamples = 4;
-        this.shadowSampleRadius = 1.0;
+        this.shadowSamples = 2;
+        this.shadowSampleRadius = 2.0;
+        this.uShadowStrength = 0.7;
     }
     
     async init() {
@@ -115,7 +116,8 @@ export class ShadowRenderer {
         return {
             bias: this.shadowBias,
             samples: this.shadowSamples,
-            radius: this.shadowSampleRadius
+            radius: this.shadowSampleRadius,
+            strength: this.uShadowStrength
         };
     }
     
