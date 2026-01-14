@@ -8,6 +8,7 @@ import { LightingSystem } from './scene/LightingSystem.js';
 import { PostProcessor } from './core/PostProcessor.js';
 import { ShadowRenderer } from './loaders/ShadowRenderer.js';
 import { startFPSCounter } from './core/FPS.js';
+import { createSkybox } from './core/Skybox.js';
 
 async function main() {
     const canvas = document.getElementById('game');
@@ -99,6 +100,8 @@ async function main() {
     const shadowRenderer = new ShadowRenderer(gl, scene, camera);
     await shadowRenderer.init();
 
+    const skybox = await createSkybox(gl, '../textures/skybox.png');
+
     const gun = await ModelInstance.addModel(
         gl, mainShader,
         './models/gun.glb',
@@ -168,6 +171,8 @@ async function main() {
         gl.enable(gl.CULL_FACE);
         gl.cullFace(gl.BACK);
         gl.frontFace(gl.CCW);
+
+        skybox.draw(camera.viewMatrix, projection);
 
         gunRotate+=0.01;
         gun.rotation = [1.5 * Math.PI, 0, gunRotate],
