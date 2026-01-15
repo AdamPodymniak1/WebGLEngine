@@ -102,16 +102,27 @@ async function main() {
 
     const skybox = await createSkybox(gl, '../textures/skybox.png');
 
-    // const gun = await ModelInstance.addModel(
+    // const liminal = await ModelInstance.addModel(
     //     gl, mainShader,
-    //     './models/gun.glb',
+    //     './models/liminal.glb',
     //     {
     //         position: [0, 0, 0],
     //         rotation: [1.5 * Math.PI, 0, 0],
-    //         scale: [1, 1, 1]
+    //         scale: [0.02, 0.02, 0.02]
     //     },
     // );
-    // scene.addModel(gun);
+    // scene.addModel(liminal);
+
+    const gun = await ModelInstance.addModel(
+        gl, mainShader,
+        './models/gun.glb',
+        {
+            position: [0, 0, 0],
+            rotation: [1.5 * Math.PI, 0, 0],
+            scale: [1, 1, 1]
+        },
+    );
+    scene.addModel(gun);
 
     const hang = await ModelInstance.addModel(
         gl, mainShader,
@@ -175,7 +186,7 @@ async function main() {
         skybox.draw(camera.viewMatrix, projection, sun.direction);
 
         gunRotate+=0.01;
-        //gun.rotation = [1.5 * Math.PI, 0, gunRotate],
+        gun.rotation = [1.5 * Math.PI, 0, gunRotate];
 
         const t = performance.now() * 0.0001;
         sun.direction[0] = Math.sin(t);

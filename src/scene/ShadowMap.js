@@ -1,5 +1,5 @@
 export class ShadowMap {
-    constructor(gl, width = 4096, height = 4096) {
+    constructor(gl, width = 2048, height = 2048) {
         this.gl = gl;
         this.width = width;
         this.height = height;

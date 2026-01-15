@@ -7,7 +7,7 @@ export class ShadowRenderer {
         this.scene = scene;
         this.camera = camera;
         
-        this.shadowMap = new ShadowMap(gl, 4096, 4096);
+        this.shadowMap = new ShadowMap(gl, 2048, 2048);
         this.shadowShader = null;
         
         this.lightProjMatrix = glMatrix.mat4.create();
@@ -55,7 +55,7 @@ export class ShadowRenderer {
             up
         );
         
-        const size = 25.0;
+        const size = 30.0;
         const near = 0.1;
         const far = 80.0;
 
