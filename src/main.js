@@ -50,6 +50,15 @@ async function main() {
     const fxaaFragmentSrc = await loadText('./shaders/fxaa.frag.glsl');
     const tonemapShader = new Shader(gl, postVertexSrc, tonemapFragmentSrc);
     const fxaaShader = new Shader(gl, postVertexSrc, fxaaFragmentSrc);
+
+    const celFragmentSrc = await loadText('./shaders/cel_shading.frag.glsl');
+    const celShader = new Shader(gl, postVertexSrc, celFragmentSrc);
+
+    celShader.use();
+    gl.uniform1f(celShader.getUniform("uLevels"), 12.0);
+    gl.uniform1f(celShader.getUniform("uEdgeThreshold"), 0.3);
+    gl.uniform3fv(celShader.getUniform("uEdgeColor"), [0,0,0]);
+    gl.uniform2fv(celShader.getUniform("uPixelSize"), [1 / canvas.width, 1 / canvas.height]);
     
     const postProcessor = new PostProcessor(gl);
 
@@ -82,11 +91,11 @@ async function main() {
         [1.3, 1.3, 1.3]
     );
 
-    const roomLight = addPointLight(
-        sceneLights,
-        [3, 1, -2],
-        [0.5, 1.0, 0.5]
-    );
+    // const roomLight = addPointLight(
+    //     sceneLights,
+    //     [3, 1, -2],
+    //     [0.5, 1.0, 0.5]
+    // );
 
     // const spotLight = addSpotLight(
     //     sceneLights,
@@ -115,7 +124,7 @@ async function main() {
 
     const gun = await ModelInstance.addModel(
         gl, mainShader,
-        './models/gun.glb',
+        './models/dog.glb',
         {
             position: [0, 0, 0],
             rotation: [1.5 * Math.PI, 0, 0],
@@ -186,7 +195,7 @@ async function main() {
         skybox.draw(camera.viewMatrix, projection, sun.direction);
 
         gunRotate+=0.01;
-        gun.rotation = [1.5 * Math.PI, 0, gunRotate];
+        gun.rotation = [0, gunRotate, 0];
 
         // const t = performance.now() * 0.0001;
         // sun.direction[0] = Math.sin(t);
@@ -199,6 +208,7 @@ async function main() {
         gl.uniform1f(tonemapShader.getUniform("uExposure"), exposure);
         gl.uniform1f(tonemapShader.getUniform("uGamma"), gamma);
 
+        postProcessor.pass(celShader);
         postProcessor.pass(tonemapShader);
         postProcessor.end(fxaaShader);
 
