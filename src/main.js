@@ -82,11 +82,11 @@ async function main() {
         [1.3, 1.3, 1.3]
     );
 
-    // const roomLight = addPointLight(
-    //     sceneLights,
-    //     [3, 1, -2],
-    //     [0.5, 1.0, 0.5]
-    // );
+    const roomLight = addPointLight(
+        sceneLights,
+        [3, 1, -2],
+        [0.5, 1.0, 0.5]
+    );
 
     // const spotLight = addSpotLight(
     //     sceneLights,
@@ -154,7 +154,7 @@ async function main() {
     let gunRotate = 0;
 
     function loop() {
-        shadowRenderer.render(sun.direction);
+        shadowRenderer.render(sceneLights);
         
         postProcessor.begin();
         
@@ -188,9 +188,9 @@ async function main() {
         gunRotate+=0.01;
         gun.rotation = [1.5 * Math.PI, 0, gunRotate];
 
-        const t = performance.now() * 0.0001;
-        sun.direction[0] = Math.sin(t);
-        sun.direction[2] = Math.cos(t);
+        // const t = performance.now() * 0.0001;
+        // sun.direction[0] = Math.sin(t);
+        // sun.direction[2] = Math.cos(t);
 
         scene.draw();
 

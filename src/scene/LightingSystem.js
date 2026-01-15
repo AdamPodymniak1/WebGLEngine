@@ -50,16 +50,30 @@ export class LightingSystem {
         const shader = this.shader;
         
         if (shadowRenderer) {
-            const shadowMapTex = shadowRenderer.getShadowMap().getTexture();
-            gl.activeTexture(gl.TEXTURE5);
-            gl.bindTexture(gl.TEXTURE_2D, shadowMapTex);
-            gl.uniform1i(shader.getUniform("uShadowMap"), 5);
+            const shadowCount = shadowRenderer.getShadowMapCount();
+            gl.uniform1i(shader.getUniform("uShadowLightCount"), shadowCount);
             
-            gl.uniformMatrix4fv(
-                shader.getUniform("mLightSpace"),
-                false,
-                shadowRenderer.getLightSpaceMatrix()
-            );
+            for (let i = 0; i < shadowCount; i++) {
+                const shadowMapTex = shadowRenderer.getShadowMap(i).getTexture();
+                gl.activeTexture(gl.TEXTURE5 + i);
+                gl.bindTexture(gl.TEXTURE_2D, shadowMapTex);
+                
+                if (i === 0) {
+                    gl.uniform1i(shader.getUniform("uShadowMap0"), 5);
+                    gl.uniformMatrix4fv(
+                        shader.getUniform("mLightSpace0"),
+                        false,
+                        shadowRenderer.getLightSpaceMatrix(i)
+                    );
+                } else if (i === 1) {
+                    gl.uniform1i(shader.getUniform("uShadowMap1"), 6);
+                    gl.uniformMatrix4fv(
+                        shader.getUniform("mLightSpace1"),
+                        false,
+                        shadowRenderer.getLightSpaceMatrix(i)
+                    );
+                }
+            }
             
             const settings = shadowRenderer.getSettings();
             gl.uniform1f(shader.getUniform("uShadowBias"), settings.bias);
@@ -69,6 +83,7 @@ export class LightingSystem {
             gl.uniform1i(shader.getUniform("uShadowsEnabled"), 1);
         } else {
             gl.uniform1i(shader.getUniform("uShadowsEnabled"), 0);
+            gl.uniform1i(shader.getUniform("uShadowLightCount"), 0);
         }
     }
 }

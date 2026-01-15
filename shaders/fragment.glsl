@@ -28,6 +28,7 @@ struct SpotLight {
 #define MAX_DIR_LIGHTS 2
 #define MAX_POINT_LIGHTS 4
 #define MAX_SPOT_LIGHTS 2
+#define MAX_SHADOW_LIGHTS 2
 
 in vec2 fragTexCoord;
 in vec3 fragPosition;
@@ -56,13 +57,16 @@ uniform bool uUseNormalMap;
 uniform bool uUseMetalRoughness;
 uniform bool uUseAOMap;
 
-uniform highp sampler2DShadow uShadowMap;
-uniform mat4 mLightSpace;
+uniform highp sampler2DShadow uShadowMap0;
+uniform highp sampler2DShadow uShadowMap1;
+uniform mat4 mLightSpace0;
+uniform mat4 mLightSpace1;
 uniform float uShadowBias;
 uniform int uShadowSamples;
 uniform float uShadowSampleRadius;
 uniform float uShadowStrength;
 uniform int uShadowsEnabled;
+uniform int uShadowLightCount;
 
 out vec4 outColor;
 
@@ -82,36 +86,60 @@ float getAO() {
     return texture(uAOMap, fragTexCoord).r;
 }
 
-float calculateShadow(vec3 fragPos, vec3 normal) {
-    if (uShadowsEnabled == 0 || numDirLights == 0) return 1.0;
+float calculateShadow(vec3 fragPos, vec3 normal, int lightIndex) {
+    if (uShadowsEnabled == 0 || lightIndex >= uShadowLightCount) return 1.0;
 
-    vec4 lightSpacePos = mLightSpace * vec4(fragPos, 1.0);
-    vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
-    projCoords = projCoords * 0.5 + 0.5;
+    vec4 lightSpacePos;
+    vec3 projCoords;
+    
+    if (lightIndex == 0) {
+        lightSpacePos = mLightSpace0 * vec4(fragPos, 1.0);
+        projCoords = lightSpacePos.xyz / lightSpacePos.w;
+        projCoords = projCoords * 0.5 + 0.5;
+    } else if (lightIndex == 1) {
+        lightSpacePos = mLightSpace1 * vec4(fragPos, 1.0);
+        projCoords = lightSpacePos.xyz / lightSpacePos.w;
+        projCoords = projCoords * 0.5 + 0.5;
+    } else {
+        return 1.0;
+    }
 
     if (projCoords.z < 0.0 || projCoords.z > 1.0 ||
         projCoords.x < 0.0 || projCoords.x > 1.0 ||
         projCoords.y < 0.0 || projCoords.y > 1.0)
         return 1.0;
 
-    vec2 texelSize = 1.0 / vec2(textureSize(uShadowMap, 0));
+    vec2 texelSize;
+    if (lightIndex == 0) {
+        texelSize = 1.0 / vec2(textureSize(uShadowMap0, 0));
+    } else {
+        texelSize = 1.0 / vec2(textureSize(uShadowMap1, 0));
+    }
+    
     float shadow = 0.0;
     int k = uShadowSamples;
 
     for (int x = -k; x <= k; ++x) {
         for (int y = -k; y <= k; ++y) {
             vec2 offset = vec2(x, y) * texelSize * uShadowSampleRadius;
-            shadow += texture(
-                uShadowMap,
-                vec3(clamp(projCoords.xy + offset, 0.0, 1.0), projCoords.z - uShadowBias)
-            );
+            if (lightIndex == 0) {
+                shadow += texture(
+                    uShadowMap0,
+                    vec3(clamp(projCoords.xy + offset, 0.0, 1.0), projCoords.z - uShadowBias)
+                );
+            } else if (lightIndex == 1) {
+                shadow += texture(
+                    uShadowMap1,
+                    vec3(clamp(projCoords.xy + offset, 0.0, 1.0), projCoords.z - uShadowBias)
+                );
+            }
         }
     }
     shadow /= float((k*2+1)*(k*2+1));
     return mix(1.0, shadow, uShadowStrength);
 }
 
-vec3 CalcDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir, float roughness, float shadow) {
+vec3 CalcDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir, float roughness, int lightIndex) {
     vec3 lightDir = normalize(-light.direction);
     float diff = max(dot(normal, lightDir), 0.0);
     float spec = 0.0;
@@ -120,10 +148,13 @@ vec3 CalcDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir, flo
         vec3 reflectDir = reflect(-lightDir, normal);
         float specPower = mix(128.0, 8.0, roughness);
         spec = pow(max(dot(viewDir, reflectDir), 0.0), specPower);
-        spec *= shadow;
     }
 
-    return (diff + spec) * light.color * shadow;
+    float shadow = (lightIndex < uShadowLightCount) ? calculateShadow(fragPosition, normal, lightIndex) : 1.0;
+    spec *= shadow;
+    diff *= shadow;
+    
+    return (diff + spec) * light.color;
 }
 
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, float roughness) {
@@ -177,12 +208,10 @@ void main() {
     float roughness = getRoughness();
     float ao = getAO();
 
-    float shadow = calculateShadow(fragPosition, normal);
     vec3 result = ambientLightIntensity * baseColor.rgb;
 
     for (int i = 0; i < numDirLights; i++) {
-        float s = (i == 0) ? shadow : 1.0;
-        result += CalcDirectionalLight(dirLights[i], normal, viewDir, roughness, s) * baseColor.rgb;
+        result += CalcDirectionalLight(dirLights[i], normal, viewDir, roughness, i) * baseColor.rgb;
     }
 
     for (int i = 0; i < numPointLights; i++)
