@@ -41,14 +41,22 @@ async function main() {
     let exposure = 0.6;
     let gamma = 0.6;
 
+    let focusDistance = 8.0;
+    let focusRange = 4.0;
+    let maxBlur = 8.0;
+    let dofEnabled = false;
+    let bokehRadius = 8;
+
     const vertexSrc = await loadText('./shaders/main/vertex.glsl');
     const fragmentSrc = await loadText('./shaders/main/fragment.glsl');
     const mainShader = new Shader(gl, vertexSrc, fragmentSrc);
     
     const postVertexSrc = await loadText('./shaders/postprocessing/post.vert.glsl');
     const tonemapFragmentSrc = await loadText('./shaders/postprocessing/tonemap.frag.glsl');
+    const depthOfFieldFragmentSrc = await loadText('./shaders/postprocessing/depth_of_field.frag.glsl');
     const fxaaFragmentSrc = await loadText('./shaders/antialliasing/fxaa.frag.glsl');
     const smaaFragmentSrc = await loadText('./shaders/antialliasing/smaa.frag.glsl');
+    const depthOfFieldShader = new Shader(gl, postVertexSrc, depthOfFieldFragmentSrc);
     const tonemapShader = new Shader(gl, postVertexSrc, tonemapFragmentSrc);
     const fxaaShader = new Shader(gl, postVertexSrc, fxaaFragmentSrc);
     const smaaShader = new Shader(gl, postVertexSrc, smaaFragmentSrc);
@@ -194,6 +202,23 @@ async function main() {
 
         scene.draw();
 
+        if (dofEnabled) {
+            depthOfFieldShader.use();
+            
+            gl.uniform1f(depthOfFieldShader.getUniform("uNear"), 0.1);
+            gl.uniform1f(depthOfFieldShader.getUniform("uFar"), 1000.0);
+            gl.uniform1f(depthOfFieldShader.getUniform("uFocusDistance"), focusDistance);
+            gl.uniform1f(depthOfFieldShader.getUniform("uFocusRange"), focusRange);
+            gl.uniform1f(depthOfFieldShader.getUniform("uMaxBlur"), maxBlur);
+            gl.uniform1f(depthOfFieldShader.getUniform("uBokehRadius"), bokehRadius);
+            gl.uniform2f(depthOfFieldShader.getUniform("uResolution"), canvas.width, canvas.height);
+            
+            postProcessor.pass(depthOfFieldShader, {
+                "uColor": postProcessor.getColorTexture(),
+                "uDepth": postProcessor.getDepthTexture()
+            });
+        }
+
         tonemapShader.use();
         gl.uniform1i(tonemapShader.getUniform("uTonemap"), tonemapMode);
         gl.uniform1f(tonemapShader.getUniform("uExposure"), exposure);
@@ -201,8 +226,7 @@ async function main() {
 
         //postProcessor.pass(celShader);
         postProcessor.pass(tonemapShader);
-        //postProcessor.end(fxaaShader);
-        postProcessor.end(smaaShader);
+        postProcessor.end(fxaaShader);
 
         requestAnimationFrame(loop);
     }

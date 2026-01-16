@@ -7,6 +7,7 @@ export class PostProcessor {
 
         this.framebuffers = [];
         this.textures = [];
+        this.depthTexture = null;
         this.depthBuffer = null;
 
         this.read = 0;
@@ -25,14 +26,23 @@ export class PostProcessor {
         this.framebuffers.length = 0;
         this.textures.length = 0;
 
-        this.depthBuffer = gl.createRenderbuffer();
-        gl.bindRenderbuffer(gl.RENDERBUFFER, this.depthBuffer);
-        gl.renderbufferStorage(
-            gl.RENDERBUFFER,
-            gl.DEPTH_COMPONENT16,
+        this.depthTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.depthTexture);
+        gl.texImage2D(
+            gl.TEXTURE_2D,
+            0,
+            gl.DEPTH_COMPONENT24,
             this.width,
-            this.height
+            this.height,
+            0,
+            gl.DEPTH_COMPONENT,
+            gl.UNSIGNED_INT,
+            null
         );
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
         for (let i = 0; i < 2; i++) {
             const fbo = gl.createFramebuffer();
@@ -66,11 +76,12 @@ export class PostProcessor {
             );
 
             if (i === 0) {
-                gl.framebufferRenderbuffer(
+                gl.framebufferTexture2D(
                     gl.FRAMEBUFFER,
                     gl.DEPTH_ATTACHMENT,
-                    gl.RENDERBUFFER,
-                    this.depthBuffer
+                    gl.TEXTURE_2D,
+                    this.depthTexture,
+                    0
                 );
             }
 
@@ -83,6 +94,14 @@ export class PostProcessor {
         }
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    }
+
+    getColorTexture() {
+        return this.textures[this.read];
+    }
+
+    getDepthTexture() {
+        return this.depthTexture;
     }
 
     initQuad() {
@@ -122,7 +141,7 @@ export class PostProcessor {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     }
 
-    pass(shader) {
+    pass(shader, additionalTextures = {}) {
         const gl = this.gl;
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffers[this.write]);
@@ -136,6 +155,13 @@ export class PostProcessor {
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, this.textures[this.read]);
         gl.uniform1i(shader.getUniform("uScene"), 0);
+
+        for (const [name, texture] of Object.entries(additionalTextures)) {
+            const unit = parseInt(name.replace(/\D/g, '')) || 1;
+            gl.activeTexture(gl.TEXTURE0 + unit);
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.uniform1i(shader.getUniform(name), unit);
+        }
 
         const resLoc = shader.getUniform("uResolution");
         if (resLoc !== null) {
