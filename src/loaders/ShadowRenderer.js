@@ -22,8 +22,8 @@ export class ShadowRenderer {
     }
     
     async init() {
-        const vertexSrc = await this.loadShaderText('./shaders/shadow.vert.glsl');
-        const fragmentSrc = await this.loadShaderText('./shaders/shadow.frag.glsl');
+        const vertexSrc = await this.loadShaderText('./shaders/main/shadow.vert.glsl');
+        const fragmentSrc = await this.loadShaderText('./shaders/main/shadow.frag.glsl');
         this.shadowShader = new Shader(this.gl, vertexSrc, fragmentSrc);
         
         for (let i = 0; i < this.maxShadowLights; i++) {

@@ -51,8 +51,8 @@ function loadImage(url) {
 
 export async function createSkybox(gl, url) {
     const cubemap = await createCubemap(gl, url);
-    const vertexSrc = await loadText('../../shaders/skybox.vert.glsl');
-    const fragmentSrc = await loadText('../../shaders/skybox.frag.glsl');
+    const vertexSrc = await loadText('../../shaders/main/skybox.vert.glsl');
+    const fragmentSrc = await loadText('../../shaders/main/skybox.frag.glsl');
     const shader = new Shader(gl, vertexSrc, fragmentSrc);
 
     const vertices = new Float32Array([

@@ -41,17 +41,17 @@ async function main() {
     let exposure = 0.6;
     let gamma = 0.6;
 
-    const vertexSrc = await loadText('./shaders/vertex.glsl');
-    const fragmentSrc = await loadText('./shaders/fragment.glsl');
+    const vertexSrc = await loadText('./shaders/main/vertex.glsl');
+    const fragmentSrc = await loadText('./shaders/main/fragment.glsl');
     const mainShader = new Shader(gl, vertexSrc, fragmentSrc);
     
-    const postVertexSrc = await loadText('./shaders/post.vert.glsl');
-    const tonemapFragmentSrc = await loadText('./shaders/tonemap.frag.glsl');
-    const fxaaFragmentSrc = await loadText('./shaders/fxaa.frag.glsl');
+    const postVertexSrc = await loadText('./shaders/postprocessing/post.vert.glsl');
+    const tonemapFragmentSrc = await loadText('./shaders/postprocessing/tonemap.frag.glsl');
+    const fxaaFragmentSrc = await loadText('./shaders/antialliasing/fxaa.frag.glsl');
     const tonemapShader = new Shader(gl, postVertexSrc, tonemapFragmentSrc);
     const fxaaShader = new Shader(gl, postVertexSrc, fxaaFragmentSrc);
 
-    const celFragmentSrc = await loadText('./shaders/cel_shading.frag.glsl');
+    const celFragmentSrc = await loadText('./shaders/postprocessing/cel_shading.frag.glsl');
     const celShader = new Shader(gl, postVertexSrc, celFragmentSrc);
 
     celShader.use();
@@ -124,7 +124,7 @@ async function main() {
 
     const gun = await ModelInstance.addModel(
         gl, mainShader,
-        './models/dog.glb',
+        './models/gun.glb',
         {
             position: [0, 0, 0],
             rotation: [1.5 * Math.PI, 0, 0],
@@ -133,16 +133,16 @@ async function main() {
     );
     scene.addModel(gun);
 
-    const hang = await ModelInstance.addModel(
-        gl, mainShader,
-        './models/hang.glb',
-        {
-            position: [0, 0, 0],
-            rotation: [1.5 * Math.PI, 0, 0],
-            scale: [0.02, 0.02, 0.02]
-        },
-    );
-    scene.addModel(hang);
+    // const hang = await ModelInstance.addModel(
+    //     gl, mainShader,
+    //     './models/hang.glb',
+    //     {
+    //         position: [0, 0, 0],
+    //         rotation: [1.5 * Math.PI, 0, 0],
+    //         scale: [0.02, 0.02, 0.02]
+    //     },
+    // );
+    // scene.addModel(hang);
 
     const keys = {};
     window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
@@ -195,7 +195,7 @@ async function main() {
         skybox.draw(camera.viewMatrix, projection, sun.direction);
 
         gunRotate+=0.01;
-        gun.rotation = [0, gunRotate, 0];
+        gun.rotation[2] = gunRotate;
 
         // const t = performance.now() * 0.0001;
         // sun.direction[0] = Math.sin(t);
@@ -208,7 +208,7 @@ async function main() {
         gl.uniform1f(tonemapShader.getUniform("uExposure"), exposure);
         gl.uniform1f(tonemapShader.getUniform("uGamma"), gamma);
 
-        postProcessor.pass(celShader);
+        //postProcessor.pass(celShader);
         postProcessor.pass(tonemapShader);
         postProcessor.end(fxaaShader);
 
