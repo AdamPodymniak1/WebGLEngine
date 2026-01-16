@@ -48,8 +48,10 @@ async function main() {
     const postVertexSrc = await loadText('./shaders/postprocessing/post.vert.glsl');
     const tonemapFragmentSrc = await loadText('./shaders/postprocessing/tonemap.frag.glsl');
     const fxaaFragmentSrc = await loadText('./shaders/antialliasing/fxaa.frag.glsl');
+    const smaaFragmentSrc = await loadText('./shaders/antialliasing/smaa.frag.glsl');
     const tonemapShader = new Shader(gl, postVertexSrc, tonemapFragmentSrc);
     const fxaaShader = new Shader(gl, postVertexSrc, fxaaFragmentSrc);
+    const smaaShader = new Shader(gl, postVertexSrc, smaaFragmentSrc);
 
     const celFragmentSrc = await loadText('./shaders/postprocessing/cel_shading.frag.glsl');
     const celShader = new Shader(gl, postVertexSrc, celFragmentSrc);
@@ -111,17 +113,6 @@ async function main() {
 
     const skybox = await createSkybox(gl, '../textures/skybox.png');
 
-    // const liminal = await ModelInstance.addModel(
-    //     gl, mainShader,
-    //     './models/liminal.glb',
-    //     {
-    //         position: [0, 0, 0],
-    //         rotation: [1.5 * Math.PI, 0, 0],
-    //         scale: [0.02, 0.02, 0.02]
-    //     },
-    // );
-    // scene.addModel(liminal);
-
     const gun = await ModelInstance.addModel(
         gl, mainShader,
         './models/gun.glb',
@@ -133,16 +124,16 @@ async function main() {
     );
     scene.addModel(gun);
 
-    // const hang = await ModelInstance.addModel(
-    //     gl, mainShader,
-    //     './models/hang.glb',
-    //     {
-    //         position: [0, 0, 0],
-    //         rotation: [1.5 * Math.PI, 0, 0],
-    //         scale: [0.02, 0.02, 0.02]
-    //     },
-    // );
-    // scene.addModel(hang);
+    const hang = await ModelInstance.addModel(
+        gl, mainShader,
+        './models/hang.glb',
+        {
+            position: [0, 0, 0],
+            rotation: [1.5 * Math.PI, 0, 0],
+            scale: [0.02, 0.02, 0.02]
+        },
+    );
+    scene.addModel(hang);
 
     const keys = {};
     window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
@@ -210,7 +201,8 @@ async function main() {
 
         //postProcessor.pass(celShader);
         postProcessor.pass(tonemapShader);
-        postProcessor.end(fxaaShader);
+        //postProcessor.end(fxaaShader);
+        postProcessor.end(smaaShader);
 
         requestAnimationFrame(loop);
     }
