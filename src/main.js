@@ -101,18 +101,18 @@ async function main() {
         [1.3, 1.3, 1.3]
     );
 
-    // const roomLight = addPointLight(
-    //     sceneLights,
-    //     [3, 1, -2],
-    //     [0.5, 1.0, 0.5]
-    // );
+    const roomLight = addPointLight(
+        sceneLights,
+        [3, 1, -2],
+        [0.5, 1.0, 0.5]
+    );
 
-    // const spotLight = addSpotLight(
-    //     sceneLights,
-    //     [0, 0, 0],
-    //     [0, 0, -1],
-    //     [1.0, 1.0, 1.0]
-    // );
+    const spotLight = addSpotLight(
+        sceneLights,
+        [0, 0, 0],
+        [0, 0, -1],
+        [1.0, 1.0, 1.0]
+    );
 
     const lighting = new LightingSystem(gl, mainShader, camera, sceneLights);
     
