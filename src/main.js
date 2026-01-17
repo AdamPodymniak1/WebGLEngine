@@ -54,10 +54,11 @@ async function main() {
     const postVertexSrc = await loadText('./shaders/postprocessing/post.vert.glsl');
     const tonemapFragmentSrc = await loadText('./shaders/postprocessing/tonemap.frag.glsl');
     const depthOfFieldFragmentSrc = await loadText('./shaders/postprocessing/depth_of_field.frag.glsl');
-    const fxaaFragmentSrc = await loadText('./shaders/antialliasing/fxaa.frag.glsl');
-    const smaaFragmentSrc = await loadText('./shaders/antialliasing/smaa.frag.glsl');
     const depthOfFieldShader = new Shader(gl, postVertexSrc, depthOfFieldFragmentSrc);
     const tonemapShader = new Shader(gl, postVertexSrc, tonemapFragmentSrc);
+
+    const fxaaFragmentSrc = await loadText('./shaders/antialliasing/fxaa.frag.glsl');
+    const smaaFragmentSrc = await loadText('./shaders/antialliasing/smaa.frag.glsl');
     const fxaaShader = new Shader(gl, postVertexSrc, fxaaFragmentSrc);
     const smaaShader = new Shader(gl, postVertexSrc, smaaFragmentSrc);
 
