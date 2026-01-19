@@ -38,7 +38,7 @@ async function main() {
     };
 
     let tonemapMode = TONEMAP.ACES;
-    let exposure = 0.6;
+    let exposure = 0.5;
     let gamma = 0.6;
 
     let focusDistance = 8.0;
