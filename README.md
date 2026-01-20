@@ -44,11 +44,14 @@ cd webgl2-3d-engine-demo
 
 ## Screenshots
 
+* **Editor**: <br />
 ![Editor](screenshots/s.png)
-![Editor](screenshots/s1.png)
-![Editor](screenshots/s2.png)
-![Editor](screenshots/s3.png)
-![Editor](screenshots/s4.png)
+* **Model materials**: <br />
+![Materials](screenshots/s1.png)
+* **Cell shading**: <br />
+![Cell Shading](screenshots/s2.png)
+* **Depth of field**: <br />
+![DoF](screenshots/s4.png)
 
 ## Built With
 
