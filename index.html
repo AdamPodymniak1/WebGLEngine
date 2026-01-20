@@ -1,10 +1,564 @@
-<style>
-    *{
-        margin: 0;
-        padding: 0;
-    }
-</style>
-
-<canvas id="game"></canvas>
-<script src="https://cdn.jsdelivr.net/npm/gl-matrix@3.4.3/gl-matrix-min.js"></script>
-<script type="module" src="src/main.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGL Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+        }
+        
+        #game {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        #editor {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 350px;
+            height: 100vh;
+            background: rgba(30, 30, 30, 0.9);
+            backdrop-filter: blur(10px);
+            color: #fff;
+            padding: 20px;
+            overflow-y: auto;
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        
+        #editor.open {
+            transform: translateX(0);
+        }
+        
+        .editor-toggle {
+            position: fixed;
+            z-index: 999;
+            background: rgba(30, 30, 30, 0.9);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+            transition: background 0.2s;
+        }
+        
+        .editor-toggle:hover {
+            background: rgba(50, 50, 50, 0.9);
+        }
+        
+        .editor-section {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .editor-section h3 {
+            margin-bottom: 15px;
+            color: #64b5f6;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #ccc;
+        }
+        
+        select, input[type="range"], input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            color: white;
+            font-size: 14px;
+        }
+        
+        input[type="range"] {
+            -webkit-appearance: none;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #64b5f6;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .color-picker {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .color-picker input[type="color"] {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button {
+            padding: 10px 15px;
+            background: #64b5f6;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+            width: 100%;
+            margin-top: 5px;
+        }
+        
+        button:hover {
+            background: #42a5f5;
+        }
+        
+        .object-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .object-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .object-item.selected {
+            background: rgba(100, 181, 246, 0.3);
+            border-left: 3px solid #64b5f6;
+        }
+        
+        .property-controls {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+        
+        .property-controls.visible {
+            display: block;
+        }
+        
+        .slider-with-value {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .slider-with-value input[type="range"] {
+            flex: 1;
+        }
+        
+        .slider-with-value input[type="number"] {
+            width: 70px;
+        }
+        
+        .vector-controls {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .vector-controls input {
+            flex: 1;
+        }
+        
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .toggle-switch input[type="checkbox"] {
+            width: 50px;
+            height: 24px;
+            appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .toggle-switch input[type="checkbox"]:checked {
+            background: #64b5f6;
+        }
+        
+        .toggle-switch input[type="checkbox"]:before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s;
+        }
+        
+        .toggle-switch input[type="checkbox"]:checked:before {
+            transform: translateX(26px);
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="game"></canvas>
+    <button class="editor-toggle" id="toggleEditor">Toggle Editor</button>
+    
+    <div id="editor">
+        <h2 style="margin-bottom: 20px; color: #64b5f6;">WebGL Editor</h2>
+        
+        <div class="editor-section">
+            <h3>Camera</h3>
+            <div class="control-group">
+                <label>Movement Speed</label>
+                <div class="slider-with-value">
+                    <input type="range" id="cameraSpeed" min="0.1" max="10" step="0.1" value="1">
+                    <input type="number" id="cameraSpeedValue" min="0.1" max="10" step="0.1" value="1">
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Mouse Sensitivity</label>
+                <div class="slider-with-value">
+                    <input type="range" id="mouseSensitivity" min="0.001" max="0.01" step="0.001" value="0.003">
+                    <input type="number" id="mouseSensitivityValue" min="0.001" max="0.01" step="0.001" value="0.003">
+                </div>
+            </div>
+            <div class="control-group">
+                <label>FOV</label>
+                <div class="slider-with-value">
+                    <input type="range" id="cameraFOV" min="30" max="120" step="1" value="45">
+                    <input type="number" id="cameraFOVValue" min="30" max="120" step="1" value="45">
+                </div>
+            </div>
+        </div>
+        
+        <div class="editor-section">
+            <h3>Post-processing</h3>
+            <div class="control-group">
+                <label>Tone Mapping</label>
+                <select id="tonemapMode">
+                    <option value="0">ACES</option>
+                    <option value="1">Filmic</option>
+                    <option value="2">Reinhard</option>
+                    <option value="3">Rom Bin Da House</option>
+                    <option value="4">Lottes</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Exposure</label>
+                <div class="slider-with-value">
+                    <input type="range" id="exposure" min="0.1" max="5" step="0.1" value="0.5">
+                    <input type="number" id="exposureValue" min="0.1" max="5" step="0.1" value="0.5">
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Gamma</label>
+                <div class="slider-with-value">
+                    <input type="range" id="gamma" min="0.1" max="3" step="0.1" value="0.6">
+                    <input type="number" id="gammaValue" min="0.1" max="3" step="0.1" value="0.6">
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Anti-aliasing</label>
+                <select id="antiAliasing">
+                    <option value="none">None</option>
+                    <option value="fxaa" selected>FXAA</option>
+                    <option value="smaa">SMAA</option>
+                </select>
+            </div>
+            <div class="control-group toggle-switch">
+                <label>Depth of Field</label>
+                <input type="checkbox" id="dofEnabled">
+            </div>
+            <div class="control-group" id="dofControls">
+                <label>Focus Distance</label>
+                <div class="slider-with-value">
+                    <input type="range" id="focusDistance" min="0.1" max="20" step="0.1" value="8">
+                    <input type="number" id="focusDistanceValue" min="0.1" max="20" step="0.1" value="8">
+                </div>
+                <label>Focus Range</label>
+                <div class="slider-with-value">
+                    <input type="range" id="focusRange" min="0.1" max="10" step="0.1" value="4">
+                    <input type="number" id="focusRangeValue" min="0.1" max="10" step="0.1" value="4">
+                </div>
+                <label>Max Blur</label>
+                <div class="slider-with-value">
+                    <input type="range" id="maxBlur" min="0" max="20" step="0.1" value="8">
+                    <input type="number" id="maxBlurValue" min="0" max="20" step="0.1" value="8">
+                </div>
+                <label>Bokeh Radius</label>
+                <div class="slider-with-value">
+                    <input type="range" id="bokehRadius" min="1" max="20" step="1" value="8">
+                    <input type="number" id="bokehRadiusValue" min="1" max="20" step="1" value="8">
+                </div>
+            </div>
+            <div class="control-group toggle-switch">
+                <label>Cel Shading</label>
+                <input type="checkbox" id="celShadingEnabled">
+            </div>
+            <div class="control-group" id="celShadingControls">
+                <label>Color Levels</label>
+                <div class="slider-with-value">
+                    <input type="range" id="celLevels" min="2" max="20" step="1" value="12">
+                    <input type="number" id="celLevelsValue" min="2" max="20" step="1" value="12">
+                </div>
+                <label>Edge Threshold</label>
+                <div class="slider-with-value">
+                    <input type="range" id="celEdgeThreshold" min="0.1" max="1" step="0.1" value="0.3">
+                    <input type="number" id="celEdgeThresholdValue" min="0.1" max="1" step="0.1" value="0.3">
+                </div>
+            </div>
+        </div>
+        
+        <div class="editor-section">
+            <h3>Lighting</h3>
+            <div class="control-group">
+                <label>Sun Direction</label>
+                <div class="vector-controls">
+                    <input type="number" id="sunDirX" step="0.1" value="3" placeholder="X">
+                    <input type="number" id="sunDirY" step="0.1" value="-2" placeholder="Y">
+                    <input type="number" id="sunDirZ" step="0.1" value="-3" placeholder="Z">
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Sun Color</label>
+                <div class="color-picker">
+                    <input type="color" id="sunColor" value="#a9a9a9">
+                    <input type="text" id="sunColorHex" value="#a9a9a9" readonly>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Room Light Position</label>
+                <div class="vector-controls">
+                    <input type="number" id="roomLightX" step="0.1" value="3" placeholder="X">
+                    <input type="number" id="roomLightY" step="0.1" value="1" placeholder="Y">
+                    <input type="number" id="roomLightZ" step="0.1" value="-2" placeholder="Z">
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Room Light Color</label>
+                <div class="color-picker">
+                    <input type="color" id="roomLightColor" value="#80ff80">
+                    <input type="text" id="roomLightColorHex" value="#80ff80" readonly>
+                </div>
+            </div>
+            <button id="addLight">Add New Light</button>
+        </div>
+        
+        <div class="editor-section">
+            <h3>Scene Objects</h3>
+            <div id="objectList">
+            </div>
+            <button id="addObject">Add New Object</button>
+        </div>
+        
+        <div class="editor-section">
+            <h3>Selected Object</h3>
+            <div id="objectProperties">
+                <div class="control-group">
+                    <label>Model Type</label>
+                    <select id="objectModelType">
+                        <option value="gun">Gun</option>
+                        <option value="hang">Hang</option>
+                        <option value="cube">Cube</option>
+                        <option value="sphere">Sphere</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Position</label>
+                    <div class="vector-controls">
+                        <input type="number" id="objPosX" step="0.1" value="0" placeholder="X">
+                        <input type="number" id="objPosY" step="0.1" value="0" placeholder="Y">
+                        <input type="number" id="objPosZ" step="0.1" value="0" placeholder="Z">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Rotation (radians)</label>
+                    <div class="vector-controls">
+                        <input type="number" id="objRotX" step="0.1" value="0" placeholder="X">
+                        <input type="number" id="objRotY" step="0.1" value="0" placeholder="Y">
+                        <input type="number" id="objRotZ" step="0.1" value="0" placeholder="Z">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Scale</label>
+                    <div class="vector-controls">
+                        <input type="number" id="objScaleX" step="0.1" value="1" placeholder="X">
+                        <input type="number" id="objScaleY" step="0.1" value="1" placeholder="Y">
+                        <input type="number" id="objScaleZ" step="0.1" value="1" placeholder="Z">
+                    </div>
+                </div>
+                <button id="updateObject">Update Object</button>
+                <button id="deleteObject" style="background: #f44336;">Delete Object</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/gl-matrix@3.4.3/gl-matrix-min.js"></script>
+    <script type="module" src="src/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const editor = document.getElementById('editor');
+            const toggleEditor = document.getElementById('toggleEditor');
+            const objectList = document.getElementById('objectList');
+            
+            toggleEditor.addEventListener('click', () => {
+                editor.classList.toggle('open');
+            });
+            
+            function setupSliderSync(sliderId, numberId) {
+                const slider = document.getElementById(sliderId);
+                const number = document.getElementById(numberId);
+                
+                if (slider && number) {
+                    slider.addEventListener('input', () => {
+                        number.value = slider.value;
+                    });
+                    
+                    number.addEventListener('input', () => {
+                        slider.value = number.value;
+                    });
+                }
+            }
+            
+            setupSliderSync('cameraSpeed', 'cameraSpeedValue');
+            setupSliderSync('mouseSensitivity', 'mouseSensitivityValue');
+            setupSliderSync('cameraFOV', 'cameraFOVValue');
+            setupSliderSync('exposure', 'exposureValue');
+            setupSliderSync('gamma', 'gammaValue');
+            setupSliderSync('focusDistance', 'focusDistanceValue');
+            setupSliderSync('focusRange', 'focusRangeValue');
+            setupSliderSync('maxBlur', 'maxBlurValue');
+            setupSliderSync('bokehRadius', 'bokehRadiusValue');
+            setupSliderSync('celLevels', 'celLevelsValue');
+            setupSliderSync('celEdgeThreshold', 'celEdgeThresholdValue');
+            
+            function setupColorPicker(colorInputId, hexInputId) {
+                const colorInput = document.getElementById(colorInputId);
+                const hexInput = document.getElementById(hexInputId);
+                
+                if (colorInput && hexInput) {
+                    colorInput.addEventListener('input', () => {
+                        hexInput.value = colorInput.value;
+                    });
+                    
+                    hexInput.addEventListener('input', () => {
+                        if (hexInput.value.match(/^#[0-9A-F]{6}$/i)) {
+                            colorInput.value = hexInput.value;
+                        }
+                    });
+                }
+            }
+            
+            setupColorPicker('sunColor', 'sunColorHex');
+            setupColorPicker('roomLightColor', 'roomLightColorHex');
+            
+            const dofEnabled = document.getElementById('dofEnabled');
+            const dofControls = document.getElementById('dofControls');
+            const celShadingEnabled = document.getElementById('celShadingEnabled');
+            const celShadingControls = document.getElementById('celShadingControls');
+            
+            if (dofEnabled && dofControls) {
+                dofEnabled.addEventListener('change', () => {
+                    dofControls.style.display = dofEnabled.checked ? 'block' : 'none';
+                });
+                dofControls.style.display = dofEnabled.checked ? 'block' : 'none';
+            }
+            
+            if (celShadingEnabled && celShadingControls) {
+                celShadingEnabled.addEventListener('change', () => {
+                    celShadingControls.style.display = celShadingEnabled.checked ? 'block' : 'none';
+                });
+                celShadingControls.style.display = celShadingEnabled.checked ? 'block' : 'none';
+            }
+            
+            let selectedObjectId = null;
+            
+            function addObjectToList(id, name) {
+                const item = document.createElement('div');
+                item.className = 'object-item';
+                item.dataset.id = id;
+                item.textContent = name || `Object ${id}`;
+                
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('.object-item').forEach(el => {
+                        el.classList.remove('selected');
+                    });
+                    
+                    item.classList.add('selected');
+                    selectedObjectId = id;
+                    
+                    loadObjectProperties(id);
+                });
+                
+                objectList.appendChild(item);
+            }
+            
+            function loadObjectProperties(id) {
+                console.log(`Loading properties for object ${id}`);
+            }
+            
+            addObjectToList('gun', 'Gun Model');
+            addObjectToList('hang', 'Hang Model');
+            
+            document.getElementById('addObject')?.addEventListener('click', () => {
+                const newId = 'object_' + Date.now();
+                addObjectToList(newId, 'New Object');
+            });
+        });
+    </script>
+</body>
+</html>
