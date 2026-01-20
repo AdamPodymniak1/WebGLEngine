@@ -9,304 +9,8 @@ import { PostProcessor } from './core/PostProcessor.js';
 import { ShadowRenderer } from './loaders/ShadowRenderer.js';
 import { startFPSCounter } from './core/FPS.js';
 import { createSkybox } from './core/Skybox.js';
+import { EditorManager } from './core/EditorManager.js';
 
-// Editor Manager
-class EditorManager {
-    constructor() {
-        this.controls = {};
-        this.callbacks = {};
-        this.selectedObject = null;
-        this.objects = [];
-        this.nextObjectId = 1;
-    }
-    
-    init() {
-        // Set up event listeners for all controls
-        this.setupControls();
-        this.setupCallbacks();
-    }
-    
-    setupControls() {
-        // Camera controls
-        this.controls.cameraSpeed = document.getElementById('cameraSpeed');
-        this.controls.mouseSensitivity = document.getElementById('mouseSensitivity');
-        this.controls.cameraFOV = document.getElementById('cameraFOV');
-        
-        // Post-processing controls
-        this.controls.tonemapMode = document.getElementById('tonemapMode');
-        this.controls.exposure = document.getElementById('exposure');
-        this.controls.gamma = document.getElementById('gamma');
-        this.controls.antiAliasing = document.getElementById('antiAliasing');
-        this.controls.dofEnabled = document.getElementById('dofEnabled');
-        this.controls.focusDistance = document.getElementById('focusDistance');
-        this.controls.focusRange = document.getElementById('focusRange');
-        this.controls.maxBlur = document.getElementById('maxBlur');
-        this.controls.bokehRadius = document.getElementById('bokehRadius');
-        this.controls.celShadingEnabled = document.getElementById('celShadingEnabled');
-        this.controls.celLevels = document.getElementById('celLevels');
-        this.controls.celEdgeThreshold = document.getElementById('celEdgeThreshold');
-        
-        // Lighting controls
-        this.controls.sunDirX = document.getElementById('sunDirX');
-        this.controls.sunDirY = document.getElementById('sunDirY');
-        this.controls.sunDirZ = document.getElementById('sunDirZ');
-        this.controls.sunColor = document.getElementById('sunColor');
-        this.controls.roomLightX = document.getElementById('roomLightX');
-        this.controls.roomLightY = document.getElementById('roomLightY');
-        this.controls.roomLightZ = document.getElementById('roomLightZ');
-        this.controls.roomLightColor = document.getElementById('roomLightColor');
-        
-        // Object controls
-        this.controls.objectModelType = document.getElementById('objectModelType');
-        this.controls.objPosX = document.getElementById('objPosX');
-        this.controls.objPosY = document.getElementById('objPosY');
-        this.controls.objPosZ = document.getElementById('objPosZ');
-        this.controls.objRotX = document.getElementById('objRotX');
-        this.controls.objRotY = document.getElementById('objRotY');
-        this.controls.objRotZ = document.getElementById('objRotZ');
-        this.controls.objScaleX = document.getElementById('objScaleX');
-        this.controls.objScaleY = document.getElementById('objScaleY');
-        this.controls.objScaleZ = document.getElementById('objScaleZ');
-    }
-    
-    setupCallbacks() {
-        // Camera callbacks
-        if (this.controls.cameraSpeed) {
-            this.controls.cameraSpeed.addEventListener('input', () => {
-                this.emit('cameraSpeedChanged', parseFloat(this.controls.cameraSpeed.value));
-            });
-        }
-        
-        if (this.controls.mouseSensitivity) {
-            this.controls.mouseSensitivity.addEventListener('input', () => {
-                this.emit('mouseSensitivityChanged', parseFloat(this.controls.mouseSensitivity.value));
-            });
-        }
-        
-        if (this.controls.cameraFOV) {
-            this.controls.cameraFOV.addEventListener('input', () => {
-                this.emit('cameraFOVChanged', parseFloat(this.controls.cameraFOV.value));
-            });
-        }
-        
-        // Post-processing callbacks
-        if (this.controls.tonemapMode) {
-            this.controls.tonemapMode.addEventListener('change', () => {
-                this.emit('tonemapChanged', parseInt(this.controls.tonemapMode.value));
-            });
-        }
-        
-        if (this.controls.exposure) {
-            this.controls.exposure.addEventListener('input', () => {
-                this.emit('exposureChanged', parseFloat(this.controls.exposure.value));
-            });
-        }
-        
-        if (this.controls.gamma) {
-            this.controls.gamma.addEventListener('input', () => {
-                this.emit('gammaChanged', parseFloat(this.controls.gamma.value));
-            });
-        }
-        
-        if (this.controls.antiAliasing) {
-            this.controls.antiAliasing.addEventListener('change', () => {
-                this.emit('antiAliasingChanged', this.controls.antiAliasing.value);
-            });
-        }
-        
-        if (this.controls.dofEnabled) {
-            this.controls.dofEnabled.addEventListener('change', () => {
-                this.emit('dofEnabledChanged', this.controls.dofEnabled.checked);
-            });
-        }
-        
-        if (this.controls.focusDistance) {
-            this.controls.focusDistance.addEventListener('input', () => {
-                this.emit('focusDistanceChanged', parseFloat(this.controls.focusDistance.value));
-            });
-        }
-        
-        if (this.controls.focusRange) {
-            this.controls.focusRange.addEventListener('input', () => {
-                this.emit('focusRangeChanged', parseFloat(this.controls.focusRange.value));
-            });
-        }
-        
-        if (this.controls.maxBlur) {
-            this.controls.maxBlur.addEventListener('input', () => {
-                this.emit('maxBlurChanged', parseFloat(this.controls.maxBlur.value));
-            });
-        }
-        
-        if (this.controls.bokehRadius) {
-            this.controls.bokehRadius.addEventListener('input', () => {
-                this.emit('bokehRadiusChanged', parseFloat(this.controls.bokehRadius.value));
-            });
-        }
-        
-        if (this.controls.celShadingEnabled) {
-            this.controls.celShadingEnabled.addEventListener('change', () => {
-                this.emit('celShadingEnabledChanged', this.controls.celShadingEnabled.checked);
-            });
-        }
-        
-        if (this.controls.celLevels) {
-            this.controls.celLevels.addEventListener('input', () => {
-                this.emit('celLevelsChanged', parseFloat(this.controls.celLevels.value));
-            });
-        }
-        
-        if (this.controls.celEdgeThreshold) {
-            this.controls.celEdgeThreshold.addEventListener('input', () => {
-                this.emit('celEdgeThresholdChanged', parseFloat(this.controls.celEdgeThreshold.value));
-            });
-        }
-        
-        // Lighting callbacks
-        const sunCallbacks = () => {
-            this.emit('sunChanged', {
-                direction: [
-                    parseFloat(this.controls.sunDirX.value),
-                    parseFloat(this.controls.sunDirY.value),
-                    parseFloat(this.controls.sunDirZ.value)
-                ],
-                color: this.hexToRgb(this.controls.sunColor.value)
-            });
-        };
-        
-        ['sunDirX', 'sunDirY', 'sunDirZ', 'sunColor'].forEach(control => {
-            if (this.controls[control]) {
-                this.controls[control].addEventListener('input', sunCallbacks);
-            }
-        });
-        
-        const roomLightCallbacks = () => {
-            this.emit('roomLightChanged', {
-                position: [
-                    parseFloat(this.controls.roomLightX.value),
-                    parseFloat(this.controls.roomLightY.value),
-                    parseFloat(this.controls.roomLightZ.value)
-                ],
-                color: this.hexToRgb(this.controls.roomLightColor.value)
-            });
-        };
-        
-        ['roomLightX', 'roomLightY', 'roomLightZ', 'roomLightColor'].forEach(control => {
-            if (this.controls[control]) {
-                this.controls[control].addEventListener('input', roomLightCallbacks);
-            }
-        });
-        
-        // Object callbacks
-        document.getElementById('updateObject')?.addEventListener('click', () => {
-            if (this.selectedObject) {
-                const properties = {
-                    modelType: this.controls.objectModelType.value,
-                    position: [
-                        parseFloat(this.controls.objPosX.value),
-                        parseFloat(this.controls.objPosY.value),
-                        parseFloat(this.controls.objPosZ.value)
-                    ],
-                    rotation: [
-                        parseFloat(this.controls.objRotX.value),
-                        parseFloat(this.controls.objRotY.value),
-                        parseFloat(this.controls.objRotZ.value)
-                    ],
-                    scale: [
-                        parseFloat(this.controls.objScaleX.value),
-                        parseFloat(this.controls.objScaleY.value),
-                        parseFloat(this.controls.objScaleZ.value)
-                    ]
-                };
-                this.emit('objectUpdated', { id: this.selectedObject.id, properties });
-            }
-        });
-        
-        document.getElementById('deleteObject')?.addEventListener('click', () => {
-            if (this.selectedObject) {
-                this.emit('objectDeleted', this.selectedObject.id);
-                this.selectedObject = null;
-            }
-        });
-        
-        document.getElementById('addObject')?.addEventListener('click', () => {
-            const properties = {
-                modelType: this.controls.objectModelType.value,
-                position: [
-                    parseFloat(this.controls.objPosX.value),
-                    parseFloat(this.controls.objPosY.value),
-                    parseFloat(this.controls.objPosZ.value)
-                ],
-                rotation: [
-                    parseFloat(this.controls.objRotX.value),
-                    parseFloat(this.controls.objRotY.value),
-                    parseFloat(this.controls.objRotZ.value)
-                ],
-                scale: [
-                    parseFloat(this.controls.objScaleX.value),
-                    parseFloat(this.controls.objScaleY.value),
-                    parseFloat(this.controls.objScaleZ.value)
-                ]
-            };
-            this.emit('objectAdded', { id: 'obj_' + this.nextObjectId++, properties });
-        });
-        
-        document.getElementById('addLight')?.addEventListener('click', () => {
-            this.emit('addLight');
-        });
-    }
-    
-    on(event, callback) {
-        if (!this.callbacks[event]) {
-            this.callbacks[event] = [];
-        }
-        this.callbacks[event].push(callback);
-    }
-    
-    emit(event, data) {
-        if (this.callbacks[event]) {
-            this.callbacks[event].forEach(callback => callback(data));
-        }
-    }
-    
-    hexToRgb(hex) {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? [
-            parseInt(result[1], 16) / 255,
-            parseInt(result[2], 16) / 255,
-            parseInt(result[3], 16) / 255
-        ] : [1, 1, 1];
-    }
-    
-    rgbToHex(r, g, b) {
-        return "#" + ((1 << 24) + (Math.round(r * 255) << 16) + (Math.round(g * 255) << 8) + Math.round(b * 255)).toString(16).slice(1);
-    }
-    
-    addObject(object) {
-        this.objects.push(object);
-    }
-    
-    selectObject(object) {
-        this.selectedObject = object;
-        this.updateObjectControls(object);
-    }
-    
-    updateObjectControls(object) {
-        if (object) {
-            this.controls.objPosX.value = object.position[0];
-            this.controls.objPosY.value = object.position[1];
-            this.controls.objPosZ.value = object.position[2];
-            this.controls.objRotX.value = object.rotation[0];
-            this.controls.objRotY.value = object.rotation[1];
-            this.controls.objRotZ.value = object.rotation[2];
-            this.controls.objScaleX.value = object.scale[0];
-            this.controls.objScaleY.value = object.scale[1];
-            this.controls.objScaleZ.value = object.scale[2];
-        }
-    }
-}
-
-// Create global editor instance
 const editor = new EditorManager();
 
 async function main() {
@@ -426,7 +130,6 @@ async function main() {
 
     const skybox = await createSkybox(gl, '../textures/skybox.png');
 
-    // Store references to models for editor
     const modelInstances = {};
     
     const gun = await ModelInstance.addModel(
@@ -439,7 +142,8 @@ async function main() {
         },
     );
     modelInstances.gun = gun;
-    gun.editorId = 'gun';
+    gun.id = 'gun';
+    gun.name = 'Gun Model';
     scene.addModel(gun);
 
     const hang = await ModelInstance.addModel(
@@ -452,13 +156,15 @@ async function main() {
         },
     );
     modelInstances.hang = hang;
-    hang.editorId = 'hang';
+    hang.id = 'hang';
+    hang.name = 'Hang Model';
     scene.addModel(hang);
 
-    // Initialize editor
     editor.init();
 
-    // Connect editor to WebGL application
+    editor.addObjectToUI(gun);
+    editor.addObjectToUI(hang);
+
     editor.on('cameraSpeedChanged', (speed) => {
         camera.speed = speed;
     });
@@ -478,8 +184,9 @@ async function main() {
         mainShader.use();
         gl.uniformMatrix4fv(mainShader.getUniform('mProj'), false, projection);
         
-        // Update skybox projection as well
-        skybox.updateProjection(projection);
+        if (skybox.updateProjection) {
+            skybox.updateProjection(projection);
+        }
     });
 
     editor.on('tonemapChanged', (mode) => {
@@ -545,62 +252,43 @@ async function main() {
     });
 
     editor.on('objectAdded', async (data) => {
-        let modelPath;
-        let scale = [1, 1, 1];
-        
-        switch(data.properties.modelType) {
-            case 'gun':
-                modelPath = './models/gun.glb';
-                scale = [1, 1, 1];
-                break;
-            case 'hang':
-                modelPath = './models/hang.glb';
-                scale = [0.02, 0.02, 0.02];
-                break;
-            case 'cube':
-                modelPath = './models/cube.glb'; // You'll need to add this model
-                break;
-            case 'sphere':
-                modelPath = './models/sphere.glb'; // You'll need to add this model
-                break;
-            default:
-                modelPath = './models/gun.glb';
-        }
-        
         try {
             const newModel = await ModelInstance.addModel(
                 gl, mainShader,
-                modelPath,
+                data.properties.modelPath,
                 {
                     position: data.properties.position,
                     rotation: data.properties.rotation,
-                    scale: scale
+                    scale: data.properties.scale
                 }
             );
             
-            newModel.editorId = data.id;
+            if (!newModel) {
+                console.error('ModelInstance.addModel returned null/undefined');
+                return;
+            }
+            
+            newModel.id = data.id;
+            newModel.name = data.properties.fileName || `Object ${data.id}`;
             modelInstances[data.id] = newModel;
-            scene.addModel(newModel);
             
-            // Add to editor list
-            const objectList = document.getElementById('objectList');
-            const item = document.createElement('div');
-            item.className = 'object-item';
-            item.dataset.id = data.id;
-            item.textContent = `Object ${data.id}`;
+            if (scene.addModel) {
+                scene.addModel(newModel);
+            } else if (scene.models && Array.isArray(scene.models)) {
+                scene.models.push(newModel);
+            } else {
+                console.error('Scene does not have addModel method or models array');
+                return;
+            }
             
-            item.addEventListener('click', () => {
-                document.querySelectorAll('.object-item').forEach(el => {
-                    el.classList.remove('selected');
-                });
-                item.classList.add('selected');
-                editor.selectObject(newModel);
-            });
+            editor.addObjectToUI(newModel);
+            editor.selectObject(newModel);
             
-            objectList.appendChild(item);
+            console.log(`Added new object: ${data.id}`);
             
         } catch (error) {
             console.error('Failed to load model:', error);
+            alert(`Failed to load model: ${error.message}`);
         }
     });
 
@@ -610,32 +298,35 @@ async function main() {
             model.position = data.properties.position;
             model.rotation = data.properties.rotation;
             model.scale = data.properties.scale;
-            model.updateMatrix();
+            
+            if (data.properties.name !== undefined) {
+                model.name = data.properties.name;
+                editor.updateObjectName(data.id, data.properties.name);
+            }
+            
+            if (model.updateMatrix) {
+                model.updateMatrix();
+            }
+        }
+    });
+
+    editor.on('objectNameChanged', (data) => {
+        const model = modelInstances[data.id];
+        if (model) {
+            model.name = data.name;
+            editor.controls.objName.value = data.name;
         }
     });
 
     editor.on('objectDeleted', (id) => {
         const model = modelInstances[id];
         if (model) {
-            scene.removeModel(model);
-            delete modelInstances[id];
-            
-            // Remove from editor list
-            const item = document.querySelector(`.object-item[data-id="${id}"]`);
-            if (item) {
-                item.remove();
+            if (scene.models && Array.isArray(scene.models)) {
+                scene.models = scene.models.filter(m => m.id !== id);
             }
+            delete modelInstances[id];
+            editor.removeObjectFromUI(id);
         }
-    });
-
-    editor.on('addLight', () => {
-        // Add a new point light at camera position
-        const newLight = addPointLight(
-            sceneLights,
-            [camera.position[0], camera.position[1], camera.position[2]],
-            [1.0, 1.0, 1.0]
-        );
-        console.log('New light added:', newLight);
     });
 
     const keys = {};
@@ -691,10 +382,6 @@ async function main() {
         gunRotate += 0.01;
         gun.rotation[2] = gunRotate;
 
-        // const t = performance.now() * 0.0001;
-        // sun.direction[0] = Math.sin(t);
-        // sun.direction[2] = Math.cos(t);
-
         scene.draw();
 
         if (celShadingEnabled) {
@@ -727,7 +414,6 @@ async function main() {
 
         postProcessor.pass(tonemapShader);
         
-        // Apply anti-aliasing
         switch(antiAliasingMode) {
             case 'fxaa':
                 postProcessor.end(fxaaShader);
@@ -762,9 +448,16 @@ startFPSCounter(fps => {
         el.style.padding = '5px 10px';
         el.style.background = 'rgba(0,0,0,0.5)';
         el.style.borderRadius = '3px';
+        el.style.zIndex = '1001';
         document.body.appendChild(el);
         return el;
     })();
     
     fpsElement.textContent = `FPS: ${fps.toFixed(1)}`;
+});
+
+window.addEventListener('resize', () => {
+    const canvas = document.getElementById('game');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 });
