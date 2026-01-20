@@ -15,7 +15,7 @@ A simple **3D engine demo** built with **WebGL2**, showcasing advanced rendering
 
 ## Demo
 
-You can view the live demo [here](#linktomysite)
+You can view the live demo [here](https://adampodymniak1.github.io/WebGLEngine/engine.html)
 
 ## Getting Started
 
